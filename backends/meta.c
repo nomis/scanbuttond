@@ -20,12 +20,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <syslog.h>
 #include <dlfcn.h>
 #include "scanbuttond.h"
 #include "meta.h"
 
+#define MAX_CONFIG_LINE 255
 
 static char* backend_name = "Dynamic Module Loader";
+static char* config_file = "/etc/scanbuttond/meta.conf";
 
 scanner_t* scanners = NULL;
 backend_t* backends = NULL;
@@ -68,11 +71,11 @@ void detach_scanners(void) {
 }
 
 
-void attach_backend(backend_t* backend) {
+void attach_backend(backend_t* backend) {  
   backend->next = backends;
-  backends = backend;
-  backend->scanbtnd_init();
-  attach_scanners(backend->scanbtnd_get_supported_devices(), backend);
+  backends = backend;  
+  backend->scanbtnd_init();  
+  attach_scanners(backend->scanbtnd_get_supported_devices(), backend);  
 }
 
 
@@ -100,6 +103,9 @@ backend_t* lookup_backend(scanner_t* scanner) {
 
 
 backend_t* load_backend(const char* path) {
+
+  syslog(LOG_INFO, "meta-backend: loading \"%s\"\n", path);
+
   void* dll_handle = dlopen(path, RTLD_LAZY);
   if (!dll_handle) return NULL;
   dlerror();  // Clear any existing error
@@ -108,6 +114,7 @@ backend_t* load_backend(const char* path) {
   backend->scanbtnd_get_backend_name = dlsym(dll_handle, "scanbtnd_get_backend_name");
   backend->scanbtnd_init = dlsym(dll_handle, "scanbtnd_init");
   backend->scanbtnd_rescan = dlsym(dll_handle, "scanbtnd_rescan");
+  backend->scanbtnd_get_supported_devices = dlsym(dll_handle, "scanbtnd_get_supported_devices");
   backend->scanbtnd_open = dlsym(dll_handle, "scanbtnd_open");
   backend->scanbtnd_close = dlsym(dll_handle, "scanbtnd_close");
   backend->scanbtnd_get_button = dlsym(dll_handle, "scanbtnd_get_button");
@@ -125,11 +132,40 @@ backend_t* load_backend(const char* path) {
 }
 
 
+void strip_newline(char* str) {
+  int len = strlen(str);
+  if (len == 0) return;
+  if (str[len-1] != '\n') return;
+  str[len-1] = 0;
+}
+
+
 int scanbtnd_init(void) {
   scanners = NULL;
-  // TODO: find all modules
-  // TODO: load all modules using load_backend(...)
-  // TODO: call attach_backend(...) for every backend
+  backends = NULL;
+  
+  // read config file
+  char libdir[MAX_CONFIG_LINE];
+  char lib[MAX_CONFIG_LINE];
+  char* buf;
+  backend_t* backend;
+  FILE* f = fopen(config_file, "r");
+  if (f == NULL) return -1;
+  fgets(libdir, MAX_CONFIG_LINE, f);
+  strip_newline(libdir);
+  while (fgets(lib, MAX_CONFIG_LINE, f)) {
+    strip_newline(lib);
+    buf = (char*)malloc(strlen(libdir) + strlen(lib) + 17);
+    strcpy(buf, libdir);
+    strcat(buf, "/libscanbtnd-");
+    strcat(buf, lib);
+    strcat(buf, ".so");    
+    backend = load_backend(buf);
+    attach_backend(backend);
+    free(buf);
+  }
+  fclose(f);
+  
   return 0;
 }
 
