@@ -41,6 +41,11 @@ int scanbtnd_close(scanner_device* scanner);
 // or 0 if no button is currently pressed.
 int scanbtnd_get_button(scanner_device* scanner);
 
+// Get a valid SANE device name for this scanner, e.g. 'epson:libusb:003:017'.
+// Returns NULL if such a device name cannot be determined.
+// The memory for the string is managed by scanbtnd and should not be free'd.
+char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner);
+
 // Clean up internal data structures, free some memory
 int scanbtnd_exit(void);
 

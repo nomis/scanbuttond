@@ -180,6 +180,11 @@ int scanbtnd_get_button(scanner_device* scanner) {
 }
 
 
+char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner) {
+  return scanner->sane_device;
+}
+
+
 int scanbtnd_exit(void) {
   detach_scanners();
   libusb_exit();
