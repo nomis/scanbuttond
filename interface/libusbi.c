@@ -25,7 +25,7 @@
 
 #define TIMEOUT	   	30 * 1000	/* 30 seconds */
 
-usb_scanner* usb_devices = NULL;
+usb_scanner_t* usb_devices = NULL;
 
 
 int libusb_init(void) {
@@ -121,7 +121,7 @@ int libusb_search_out_endpoint(struct usb_device* device) {
 
 
 void libusb_attach_device(struct usb_device* device) {
-  usb_scanner* scanner = (usb_scanner*)malloc(sizeof(usb_scanner));
+  usb_scanner_t* scanner = (usb_scanner_t*)malloc(sizeof(usb_scanner_t));
   scanner->vendorID = device->descriptor.idVendor;
   scanner->productID = device->descriptor.idProduct;
   
@@ -154,7 +154,7 @@ void libusb_attach_device(struct usb_device* device) {
 
 
 void libusb_detach_devices(void) {
-  usb_scanner* next;
+  usb_scanner_t* next;
   while (usb_devices != NULL) {
     next = usb_devices->next;
     free(usb_devices->location);
@@ -186,12 +186,12 @@ void libusb_rescan(void) {
 }
   
 
-usb_scanner* libusb_get_devices(void) {
+usb_scanner_t* libusb_get_devices(void) {
   return usb_devices;
 }
 
 
-int libusb_open(usb_scanner* scanner) {
+int libusb_open(usb_scanner_t* scanner) {
   scanner->handle = usb_open(scanner->device);
   if (scanner->handle == NULL) {
     usb_close(scanner->handle);
@@ -205,12 +205,12 @@ int libusb_open(usb_scanner* scanner) {
 }
 
 
-int libusb_close(usb_scanner* scanner) {
+int libusb_close(usb_scanner_t* scanner) {
   return usb_close(scanner->handle);
 }
 
 
-int libusb_read(usb_scanner* scanner, void* buffer, int bytecount) {
+int libusb_read(usb_scanner_t* scanner, void* buffer, int bytecount) {
   int num_bytes = usb_bulk_read(scanner->handle, scanner->in_endpoint, buffer, bytecount, TIMEOUT);  
   if (num_bytes<0) {
     usb_clear_halt(scanner->handle, scanner->in_endpoint);
@@ -220,7 +220,7 @@ int libusb_read(usb_scanner* scanner, void* buffer, int bytecount) {
 }
 
 
-int libusb_write(usb_scanner* scanner, void* buffer, int bytecount) {
+int libusb_write(usb_scanner_t* scanner, void* buffer, int bytecount) {
   int num_bytes = usb_bulk_write(scanner->handle, scanner->out_endpoint, buffer, bytecount, TIMEOUT);
   if (num_bytes<0) {
     usb_clear_halt(scanner->handle, scanner->in_endpoint);

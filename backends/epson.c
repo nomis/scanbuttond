@@ -74,7 +74,7 @@ char* scanbtnd_get_backend_name(void) {
 
 // returns -1 if the scanner is unsupported, or the index of the
 // corresponding vendor-product pair in the supported_usb_devices array.
-int match_libusb_scanner(usb_scanner* scanner) {
+int match_libusb_scanner(usb_scanner_t* scanner) {
   int index;
   for (index = 0; index < NUM_SUPPORTED_USB_DEVICES; index++) {
     if (supported_usb_devices[index][0] == scanner->vendorID &&
@@ -87,7 +87,7 @@ int match_libusb_scanner(usb_scanner* scanner) {
 }
 
 
-void attach_libusb_scanner(usb_scanner* scanner) {
+void attach_libusb_scanner(usb_scanner_t* scanner) {
   int index = match_libusb_scanner(scanner);
   if (index < 0) return; // unsupported
   scanner_t* dev = (scanner_t*)malloc(sizeof(scanner_t));
@@ -115,7 +115,7 @@ void detach_scanners(void) {
 }
 
 
-void scanbtnd_scan_devices(usb_scanner* scanner) {
+void scanbtnd_scan_devices(usb_scanner_t* scanner) {
   int index;
   while (scanner != NULL) {
     index = match_libusb_scanner(scanner);
@@ -126,7 +126,7 @@ void scanbtnd_scan_devices(usb_scanner* scanner) {
 
 
 int scanbtnd_init_libusb(void) {
-  usb_scanner* scanner;
+  usb_scanner_t* scanner;
   
   libusb_init();
   scanner = libusb_get_devices();
@@ -142,7 +142,7 @@ int scanbtnd_init(void) {
 
 
 int scanbtnd_rescan(void) {
-  usb_scanner* scanner;
+  usb_scanner_t* scanner;
 
   detach_scanners();
   detected_scanners = NULL;
@@ -161,7 +161,7 @@ scanner_t* scanbtnd_get_supported_devices(void) {
 int scanbtnd_open(scanner_t* scanner) {  
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
-      return libusb_open((usb_scanner*)scanner->internal_dev_ptr);
+      return libusb_open((usb_scanner_t*)scanner->internal_dev_ptr);
     break;
   }
   return -1;
@@ -171,7 +171,7 @@ int scanbtnd_open(scanner_t* scanner) {
 int scanbtnd_close(scanner_t* scanner) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
-      return libusb_close((usb_scanner*)scanner->internal_dev_ptr);
+      return libusb_close((usb_scanner_t*)scanner->internal_dev_ptr);
     break;
   }
   return -1;
@@ -181,7 +181,7 @@ int scanbtnd_close(scanner_t* scanner) {
 int epson_read(scanner_t* scanner, void* buffer, int bytecount) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
-      return libusb_read((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
+      return libusb_read((usb_scanner_t*)scanner->internal_dev_ptr, buffer, bytecount);
     break;
   }
   return -1;
@@ -191,7 +191,7 @@ int epson_read(scanner_t* scanner, void* buffer, int bytecount) {
 int epson_write(scanner_t* scanner, void* buffer, int bytecount) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
-      return libusb_write((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
+      return libusb_write((usb_scanner_t*)scanner->internal_dev_ptr, buffer, bytecount);
     break;
   }
   return -1;

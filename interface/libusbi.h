@@ -23,7 +23,7 @@
 #include "scanbuttond.h"
 
 struct usb_scanner;
-typedef struct usb_scanner usb_scanner;
+typedef struct usb_scanner usb_scanner_t;
 
 struct usb_scanner {
 	int vendorID;
@@ -34,22 +34,23 @@ struct usb_scanner {
 	int interface;
 	int out_endpoint;
 	int in_endpoint;
-	usb_scanner* next;
+        
+	usb_scanner_t* next;
 };
 
 int libusb_init(void);
 
 void libusb_rescan(void);
 
-usb_scanner* libusb_get_devices(void);
+usb_scanner_t* libusb_get_devices(void);
 
-int libusb_open(usb_scanner* scanner);
+int libusb_open(usb_scanner_t* scanner);
 
-int libusb_close(usb_scanner* scanner);
+int libusb_close(usb_scanner_t* scanner);
 
-int libusb_read(usb_scanner* scanner, void* buffer, int bytecount);
+int libusb_read(usb_scanner_t* scanner, void* buffer, int bytecount);
 
-int libusb_write(usb_scanner* scanner, void* buffer, int bytecount);
+int libusb_write(usb_scanner_t* scanner, void* buffer, int bytecount);
 
 int libusb_exit(void);
 
