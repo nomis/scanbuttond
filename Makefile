@@ -20,11 +20,16 @@ DISTFILES = Makefile scanbuttond.c
 
 all: scanbuttond
 
-install: scanbuttond
+install: scanbuttond epson.so
 	$(INSTALL) scanbuttond $(DESTDIR)$(sbindir)/scanbuttond
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<
+
+epson.so:
+	$(CC) -c -fPIC libusbi.c -o libusbi.o
+	$(CC) -c -fPIC epson.c -o epson.o
+	$(CC) -shared -Wl,-soname,libepson.so -o libepson.so epson.o libusbi.o -lusb
 
 scanbuttond: scanbuttond.o
 	$(CC) $(LDFLAGS) -o scanbuttond scanbuttond.o
