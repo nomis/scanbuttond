@@ -27,16 +27,18 @@
 
 char* scanbtnd_get_connection_name(int connection);
 
-struct scanner_device;
-typedef struct scanner_device scanner_device;
+struct scanner;
+typedef struct scanner scanner_t;
 
-struct scanner_device {
+struct scanner {
 	char* vendor;
 	char* product;
 	int connection;
 	void* internal_dev_ptr;
 	char* sane_device;
-	scanner_device* next;
+	void* meta_info;	// reserved for the meta backend
+	
+	scanner_t* next;
 };
 
 #endif

@@ -56,8 +56,8 @@ void execute(const char* program) {
 }
 
 
-void list_devices(scanner_device* devices) {
-  scanner_device* dev = devices;
+void list_devices(scanner_t* devices) {
+  scanner_t* dev = devices;
   while (dev != NULL) {
     syslog(LOG_INFO, "found scanner: vendor=\"%s\", product=\"%s\", connection=\"%s\", sane_name=\"%s\"",
       dev->vendor, dev->product, scanbtnd_get_connection_name(dev->connection),
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   int i;
   int button;
   pid_t pid;
-  scanner_device* dev;
+  scanner_t* dev;
   
   openlog(NULL, 0, LOG_DAEMON);
   
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
   
   scanbtnd_init();
   
-  scanner_device* devices = scanbtnd_get_supported_devices();
+  scanner_t* devices = scanbtnd_get_supported_devices();
   
   if (devices == NULL) {
     printf("No scanner found.\n");
