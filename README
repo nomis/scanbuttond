@@ -1,4 +1,4 @@
-Scanner Button Daemon (scanbuttond), Version 0.1
+Scanner Button Daemon (scanbuttond), Version 0.2
 ================================================
 
 
@@ -6,7 +6,7 @@ First things first
 ------------------
 
 This software is in its very early stages of development.
-As of version 0.1, there is only one supported scanner
+As of version 0.2, there is only one supported scanner
 (Epson GT-9300 aka "Perfection 2400") and only one supported
 connection interface (libusb). 
 There may be tons of critical bugs, and it's unlikely that
@@ -39,6 +39,41 @@ Connection: USB (using libusb, the scanner kernel module is
             currently unsupported)
 
 
+Compilation & Installation
+--------------------------
+
+type
+> make clean
+> make
+> make install
+
+This will install the following files:
+/usr/local/bin/scanbuttond (the main executable)
+/usr/local/lib/scanbtnd/libepson.so (the epson backend)
+/usr/local/lib/scanbtnd/libepson.so.1
+/usr/local/lib/scanbtnd/libepson.so.1.0
+/root/buttonpressed.sh (the shell script which is invoked
+                        when a button has been pressed)
+			
+
+Usage
+-----
+
+type
+> scanbuttond
+
+If everyhing works, scanbuttond will fork() to background.
+To see what scanbuttond is doing, you can have a look at your
+system log, for example /var/log/everything/current (for Gentoo
+Linux systems).
+
+Currently, there is no "proper" way to quit scanbuttond.
+Just kill it, for example by typing
+> killall scanbuttond
+That should do the job. Scanbuttond installs a signal handler
+which should ensure a clean shutdown even when it's killed.
+
+
 Supported scanners
 ------------------
 
@@ -49,10 +84,43 @@ How to link actions to buttons
 ------------------------------
 
 Whenever a scanner button has been pressed, scanbuttond
-starts a shell script and passes it the button number as 
-first command line argument.
-See the file "buttonpressed.sh" for an example.
+starts a shell script and passes it the button number and
+the SANE scanner name as command line arguments.
+By default, this shell script is installed as
+/root/buttonpressed.sh. 
+Please modify it to fit your purposes.
 
+
+How to contribute to this project
+---------------------------------
+
+The development of scanbuttond should not be dependent on one 
+single person, but a community effort.
+You could help by ...
+
+ * adding or enhancing a scanner backend
+ * adding or enhancing a connection interface
+ * implementing a proper shutdown mechanism
+ * doing some extensive testing
+ * sending patches
+ * sending bug reports
+ * mailing ideas how to enhance scanbuttond
+ * ...
+ 
+If you want to help, please send me an email (see below).
+
+
+Version History
+---------------
+
+0.2, released Dec 31, 2004
+  * new, modular architecture
+  * support for multiple scanners
+  * several bugfixes
+  
+0.1, released Oct 17, 2004
+  * first public version
+  
 
 Contact
 -------
