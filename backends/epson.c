@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <syslog.h>
 #include "scanbuttond.h"
 #include "interface/libusbi.h"
 #include "epson.h"
@@ -39,10 +40,9 @@ static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][2] = {
   { 0x04B8, 0x010A },  // Epson Perfection 1640
   { 0x04B8, 0x0110 },  // Epson Perfection 1650
   { 0x04B8, 0x011E },  // Epson Perfection 1660
-  { 0x04B8, 0x011B },  // Epson Perfection 2400 (NOTE: these are the USB IDs of my scanner)
-  { 0x04B8, 0x011C },  // Epson Perfection 2400 (NOTE: these are the USB IDs according to Epson)
-                       // http://support2.epson.net/manuals/english/scanner/perfection126016602400/REF_G/SPECS_8.HTM
-  { 0x04B8, 0x0112 }   // Epson Perfection 2450
+  { 0x04B8, 0x011B },  // Epson Perfection 2400
+  { 0x04B8, 0x0112 },  // Epson Perfection 2450
+  { 0x04B8, 0x011C }   // Epson Perfection 3200
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
@@ -57,8 +57,8 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
   { "Epson", "Perfection 1650" },
   { "Epson", "Perfection 1660" },
   { "Epson", "Perfection 2400" },
-  { "Epson", "Perfection 2400" },
-  { "Epson", "Perfection 2450" }
+  { "Epson", "Perfection 2450" },
+  { "Epson", "Perfection 3200" }
 };
 
 
@@ -100,6 +100,7 @@ void attach_libusb_scanner(usb_scanner* scanner) {
   strcat(dev->sane_device, scanner->location);  
   dev->next = detected_scanners;
   detected_scanners = dev;
+  syslog(LOG_INFO, "epson-backend: attached scanner \"%s %s\" via libusb", dev->vendor, dev->product);
 }
 
 

@@ -49,6 +49,7 @@ void attach_scanner(scanner_t* scanner, backend_t* backend) {
   dev->meta_info = (void*)backend;
   dev->next = scanners;
   scanners = dev;
+  syslog(LOG_INFO, "meta-backend: attached scanner \"%s %s\"", scanner->vendor, scanner->product);
 }
 
 
@@ -104,7 +105,7 @@ backend_t* lookup_backend(scanner_t* scanner) {
 
 backend_t* load_backend(const char* path) {
 
-  syslog(LOG_INFO, "meta-backend: loading \"%s\"\n", path);
+  syslog(LOG_INFO, "meta-backend: loading \"%s\"", path);
 
   void* dll_handle = dlopen(path, RTLD_LAZY);
   if (!dll_handle) return NULL;
@@ -123,6 +124,7 @@ backend_t* load_backend(const char* path) {
   
   // don't load another meta backend
   if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name()) == 0) {
+    syslog(LOG_INFO, "meta-backend: refusing to load another meta backend");
     dlclose(backend->handle);
     free(backend);
     return NULL;
@@ -150,7 +152,10 @@ int scanbtnd_init(void) {
   char* buf;
   backend_t* backend;
   FILE* f = fopen(config_file, "r");
-  if (f == NULL) return -1;
+  if (f == NULL) {
+    syslog(LOG_INFO, "meta-backend: config file \"%s\" not found. exiting.", config_file);
+    return -1;
+  }
   fgets(libdir, MAX_CONFIG_LINE, f);
   strip_newline(libdir);
   while (fgets(lib, MAX_CONFIG_LINE, f)) {
@@ -171,7 +176,18 @@ int scanbtnd_init(void) {
 
 
 int scanbtnd_rescan(void) {
-  // TODO: implement
+  backend_t* backend;
+  
+  detach_scanners();
+  scanners = NULL;
+  
+  backend = backends;
+  while (backend != NULL) {
+    backend->scanbtnd_rescan();
+    attach_scanners(backend->scanbtnd_get_supported_devices(), backend);  
+    backend = backend->next;
+  }
+  
   return 0;
 }
 
