@@ -39,14 +39,15 @@ install: scanbuttond backends/libscanbtnd-epson.so.1.0 backends/libscanbtnd-meta
 	$(SYMLINK) libscanbtnd-meta.so.1 $(DESTDIR)$(libdir)/libscanbtnd-meta.so
 	$(MKDIR) $(confdir)
 	if [ ! -f $(confdir)/buttonpressed.sh ]; then $(INSTALL) buttonpressed.sh $(confdir); fi
+	if [ ! -f $(confdir)/meta.conf ]; then $(INSTALL) meta.conf $(confdir); fi
 
-interface/libusbi.o:
+interface/libusbi.o: interface/libusbi.c
 	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) interface/libusbi.c -o interface/libusbi.o
 	
-backends/epson.o:
+backends/epson.o: backends/epson.c
 	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) backends/epson.c -o backends/epson.o
 
-backends/meta.o:
+backends/meta.o: backends/meta.c
 	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) backends/meta.c -o backends/meta.o
 		
 backends/libscanbtnd-epson.so.1.0: backends/epson.o interface/libusbi.o
@@ -55,7 +56,7 @@ backends/libscanbtnd-epson.so.1.0: backends/epson.o interface/libusbi.o
 	$(SYMLINK) libscanbtnd-epson.so.1 backends/libscanbtnd-epson.so
 
 backends/libscanbtnd-meta.so.1.0: backends/meta.o
-	$(CC) -shared -Wl,-soname,libscanbtnd-meta.so.1 -o backends/libscanbtnd-meta.so.1.0 backends/meta.o
+	$(CC) -rdynamic -shared -Wl,-soname,libscanbtnd-meta.so.1 -o backends/libscanbtnd-meta.so.1.0 backends/meta.o -ldl
 	$(LDCONFIG) -n ./backends
 	$(SYMLINK) libscanbtnd-meta.so.1 backends/libscanbtnd-meta.so
 
