@@ -45,6 +45,6 @@ clean:
 	$(REMOVE) scanbuttond
 	$(REMOVE) scanbuttond.o
 	$(REMOVE) backends/epson.o
-	$(REMOVE) backends/libepson.so.1.0
+	$(REMOVE) backends/libepson.so*
 	$(REMOVE) interface/libusbi.o
 
