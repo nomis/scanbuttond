@@ -26,15 +26,41 @@
 
 #define	ESC        	0x1B		/* ASCII value for ESC */
 
-#define NUM_SUPPORTED_USB_DEVICES 1
+#define NUM_SUPPORTED_USB_DEVICES 13
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][2] = {
-	{ 0x04B8, 0x011B }	// Epson GT-9300 (aka Perfection 2400)
+  { 0x04B8, 0x0107 },  // Epson Expression 1600
+  { 0x04B8, 0x010E },  // Epson Expression 1680
+  { 0x04B8, 0x0103 },  // Epson Perfection 610
+  { 0x04B8, 0x0101 },  // Epson Perfection 636U
+  { 0x04B8, 0x010C },  // Epson Perfection 640
+  { 0x04B8, 0x0104 },  // Epson Perfection 1200U
+  { 0x04B8, 0x010B },  // Epson Perfection 1240
+  { 0x04B8, 0x010A },  // Epson Perfection 1640
+  { 0x04B8, 0x0110 },  // Epson Perfection 1650
+  { 0x04B8, 0x011E },  // Epson Perfection 1660
+  { 0x04B8, 0x011B },  // Epson Perfection 2400 (NOTE: these are the USB IDs of my scanner)
+  { 0x04B8, 0x011C },  // Epson Perfection 2400 (NOTE: these are the USB IDs according to Epson)
+                       // http://support2.epson.net/manuals/english/scanner/perfection126016602400/REF_G/SPECS_8.HTM
+  { 0x04B8, 0x0112 }   // Epson Perfection 2450
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
-	{ "Epson", "GT-9300 / Perfection 2400"}
+  { "Epson", "Expression 1600" },
+  { "Epson", "Expression 1680" },
+  { "Epson", "Perfection 610" },
+  { "Epson", "Perfection 636U" },
+  { "Epson", "Perfection 640" },
+  { "Epson", "Perfection 1200U" },
+  { "Epson", "Perfection 1240" },
+  { "Epson", "Perfection 1640" },
+  { "Epson", "Perfection 1650" },
+  { "Epson", "Perfection 1660" },
+  { "Epson", "Perfection 2400" },
+  { "Epson", "Perfection 2400" },
+  { "Epson", "Perfection 2450" }
 };
+
 
 static char* backend_name = "Epson";
 
@@ -159,6 +185,7 @@ int epson_read(scanner_t* scanner, void* buffer, int bytecount) {
   }
   return -1;
 }
+
 
 int epson_write(scanner_t* scanner, void* buffer, int bytecount) {
   switch (scanner->connection) {
