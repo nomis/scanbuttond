@@ -35,6 +35,8 @@ struct backend {
   char* (*scanbtnd_get_sane_device_descriptor)(scanner_t* scanner);
   int (*scanbtnd_exit)(void);
   
+  void* handle;
+  
   backend_t* next;
 };
   

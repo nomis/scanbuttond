@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <dlfcn.h>
 #include "scanbuttond.h"
 #include "meta.h"
 
@@ -68,10 +69,6 @@ void detach_scanners(void) {
 
 
 void attach_backend(backend_t* backend) {
-  // don't attach another meta backend
-  if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name()) == 0) {
-    return;
-  }
   backend->next = backends;
   backends = backend;
   backend->scanbtnd_init();
@@ -81,6 +78,7 @@ void attach_backend(backend_t* backend) {
 
 void detach_backend(backend_t* backend) {
   backend->scanbtnd_exit();
+  dlclose(backend->handle);
   free(backend);
 }
 
@@ -101,10 +99,36 @@ backend_t* lookup_backend(scanner_t* scanner) {
 }
 
 
+backend_t* load_backend(const char* path) {
+  void* dll_handle = dlopen(path, RTLD_LAZY);
+  if (!dll_handle) return NULL;
+  dlerror();  // Clear any existing error
+  backend_t* backend = (backend_t*)malloc(sizeof(backend_t));
+  backend->handle = dll_handle;
+  backend->scanbtnd_get_backend_name = dlsym(dll_handle, "scanbtnd_get_backend_name");
+  backend->scanbtnd_init = dlsym(dll_handle, "scanbtnd_init");
+  backend->scanbtnd_rescan = dlsym(dll_handle, "scanbtnd_rescan");
+  backend->scanbtnd_open = dlsym(dll_handle, "scanbtnd_open");
+  backend->scanbtnd_close = dlsym(dll_handle, "scanbtnd_close");
+  backend->scanbtnd_get_button = dlsym(dll_handle, "scanbtnd_get_button");
+  backend->scanbtnd_get_sane_device_descriptor = dlsym(dll_handle, "scanbtnd_get_sane_device_descriptor");
+  backend->scanbtnd_exit = dlsym(dll_handle, "scanbtnd_exit");
+  
+  // don't load another meta backend
+  if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name()) == 0) {
+    dlclose(backend->handle);
+    free(backend);
+    return NULL;
+  }
+  
+  return backend;
+}
+
+
 int scanbtnd_init(void) {
   scanners = NULL;
-  // TODO: load all modules (using dlopen(...) or whatever)
-  // TODO: for every module, create a backend_t structure
+  // TODO: find all modules
+  // TODO: load all modules using load_backend(...)
   // TODO: call attach_backend(...) for every backend
   return 0;
 }
