@@ -1,0 +1,64 @@
+Scanner Button Daemon (scanbuttond), Version 0.1
+================================================
+
+
+First things first
+------------------
+
+This software is in its very early stages of development.
+As of version 0.1, there is only one supported scanner
+(Epson GT-9300 aka "Perfection 2400") and only one supported
+connection interface (libusb). 
+There may be tons of critical bugs, and it's unlikely that
+this software will work straight out of the box.
+Note that this daemon requires root privileges which
+should be considered a security risk.
+Be prepared for the worst!
+
+
+Introduction
+------------
+
+Modern scanners usually have several front panel buttons
+which are intended to trigger certain actions like
+copying, faxing or mailing the scanned document.
+This daemon monitors the scanner's buttons and runs a
+shell script whenever one of these buttons has been 
+pressed. Because it is accessing the scanner directly
+via libusb, there should be no conflicts with SANE
+or other scanner drivers: scanbuttond simply won't touch
+the scanner hardware while you are using SANE.
+
+
+Requirements
+------------
+
+Scanner: see "supported scanners" below
+Operating system: Linux (and perhaps other Unix-like systems)
+Connection: USB (using libusb, the scanner kernel module is 
+            currently unsupported)
+
+
+Supported scanners
+------------------
+
+* Epson GT-9300, also known as "Perfection 2400" (via libusb)
+
+
+How to link actions to buttons
+------------------------------
+
+Whenever a scanner button has been pressed, scanbuttond
+starts a shell script and passes it the button number as 
+first command line argument.
+See the file "buttonpressed.sh" for an example.
+
+
+Contact
+-------
+
+Any suggestions, criticism, bug reports/fixes, patches, ...
+are appreciated. Feel free to contact me via email:
+
+root84@users.sourceforge.net
+
