@@ -35,7 +35,7 @@ struct backend {
   char* (*scanbtnd_get_sane_device_descriptor)(scanner_t* scanner);
   int (*scanbtnd_exit)(void);
   
-  void* handle;
+  void* handle;  // handle for dlopen/dlsym/dlclose
   
   backend_t* next;
 };

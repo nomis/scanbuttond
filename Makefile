@@ -7,7 +7,7 @@ prefix = /usr/local
 exec_prefix = ${prefix}
 bindir = ${exec_prefix}/bin
 includedir = /usr/include
-libdir = ${exec_prefix}/lib/scanbtnd
+libdir = ${exec_prefix}/lib/scanbuttond
 confdir = /etc/scanbuttond
 
 CC = gcc
@@ -39,7 +39,7 @@ install: scanbuttond backends/libscanbtnd-epson.so.1.0 backends/libscanbtnd-meta
 	$(SYMLINK) libscanbtnd-meta.so.1 $(DESTDIR)$(libdir)/libscanbtnd-meta.so
 	$(MKDIR) $(confdir)
 	if [ ! -f $(confdir)/buttonpressed.sh ]; then $(INSTALL) buttonpressed.sh $(confdir); fi
-	if [ ! -f $(confdir)/meta.conf ]; then $(INSTALL) meta.conf $(confdir); fi
+	if [ ! -f $(confdir)/meta.conf ]; then $(INSTALL) backends/meta.conf $(confdir); fi
 
 interface/libusbi.o: interface/libusbi.c
 	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) interface/libusbi.c -o interface/libusbi.o
