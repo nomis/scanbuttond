@@ -28,6 +28,7 @@ typedef struct usb_scanner usb_scanner;
 struct usb_scanner {
 	int vendorID;
 	int productID;
+	char* location; // bus number + ":" + device number
 	struct usb_device* device;
 	struct usb_dev_handle* handle; // automatically set by libusb_open(...)
 	int interface;

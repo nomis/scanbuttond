@@ -63,6 +63,9 @@ void attach_libusb_scanner(usb_scanner* scanner) {
   dev->product = usb_device_descriptions[index][1];
   dev->connection = CONNECTION_LIBUSB;
   dev->internal_dev_ptr = (void*)scanner;
+  dev->sane_device = (char*)malloc(strlen(scanner->location) + 14);
+  strcpy(dev->sane_device, "epson:libusb:");
+  strcat(dev->sane_device, scanner->location);  
   dev->next = detected_scanners;
   detected_scanners = dev;
 }
@@ -72,6 +75,7 @@ void detach_scanners(void) {
   scanner_device* next;
   while (detected_scanners != NULL) {
     next = detected_scanners->next;
+    free(detected_scanners->sane_device);
     free(detected_scanners);
     detected_scanners = next;
   }

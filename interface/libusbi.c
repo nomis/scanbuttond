@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <usb.h>
 #include "libusbi.h"
 
@@ -123,6 +124,13 @@ void libusb_attach_device(struct usb_device* device) {
   usb_scanner* scanner = (usb_scanner*)malloc(sizeof(usb_scanner));
   scanner->vendorID = device->descriptor.idVendor;
   scanner->productID = device->descriptor.idProduct;
+  
+  // the location string consists of bus number, followed by a colon (":"), and the device number
+  scanner->location = (char*)malloc(strlen(device->bus->dirname) + strlen(device->filename) + 2);
+  strcpy(scanner->location, device->bus->dirname);
+  strcat(scanner->location, ":");
+  strcat(scanner->location, device->filename);
+  
   scanner->device = device;
   scanner->handle = NULL;
   scanner->interface = libusb_search_interface(device);
@@ -149,6 +157,7 @@ void libusb_detach_devices(void) {
   usb_scanner* next;
   while (usb_devices != NULL) {
     next = usb_devices->next;
+    free(usb_devices->location);
     free(usb_devices);
     usb_devices = next;
   }

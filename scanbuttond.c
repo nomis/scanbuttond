@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program;a if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//
 
 
 #include <stdio.h>
@@ -26,9 +25,9 @@
 #include <syslog.h>
 #include "backends/backend.h"
 
-#define SCRIPT		"/root/buttonpressed.sh %d"
+// the button number and the SANE device name are passed to the script as arguments
+#define SCRIPT		"/root/buttonpressed.sh %d %s"
 #define POLL_DELAY	500*1000	/* poll twice per second */
-#define LOOP_LIMIT	1200		/* run that many loops before re-initializing scanner */
 
 static char* connection_names[CONNECTIONS_COUNT] = 
     { "none", "libusb" };
@@ -41,7 +40,7 @@ char* scanbtnd_get_connection_name(int connection) {
   return connection_names[connection];
 }
 
-// Ensures a graceful exit on SIGHUP/SIGTERM/SIGINT
+// Ensures a graceful exit on SIGHUP/SIGTERM/SIGINT/SIGSEGV
 void sighandler(int i) {
   killed = 1;
   scanbtnd_exit();
@@ -60,8 +59,9 @@ void execute(const char* program) {
 void list_devices(scanner_device* devices) {
   scanner_device* dev = devices;
   while (dev != NULL) {
-    syslog(LOG_INFO, "found scanner: vendor=\"%s\", product=\"%s\", connection=\"%s\"",
-      dev->vendor, dev->product, scanbtnd_get_connection_name(dev->connection));
+    syslog(LOG_INFO, "found scanner: vendor=\"%s\", product=\"%s\", connection=\"%s\", sane_name=\"%s\"",
+      dev->vendor, dev->product, scanbtnd_get_connection_name(dev->connection),
+      scanbtnd_get_sane_device_descriptor(dev));
     dev = dev->next;
   }
 }
@@ -130,9 +130,8 @@ int main(int argc, char** argv) {
       
       if (button > 0) { 
         syslog(LOG_INFO, "button %d has been pressed.", button);
-        // TODO: implement multi-scanner support!
         char cmd[256];
-        sprintf(cmd, SCRIPT, button);
+	sprintf(cmd, SCRIPT, button, scanbtnd_get_sane_device_descriptor(dev));
         execute(cmd);
       }
     

@@ -35,6 +35,7 @@ struct scanner_device {
 	char* product;
 	int connection;
 	void* internal_dev_ptr;
+	char* sane_device;
 	scanner_device* next;
 };
 
