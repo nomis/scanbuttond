@@ -26,7 +26,7 @@
 #include "backends/backend.h"
 
 // the button number and the SANE device name are passed to the script as arguments
-#define SCRIPT		"/root/buttonpressed.sh %d %s"
+#define SCRIPT		"/etc/scanbuttond/buttonpressed.sh %d %s"
 #define POLL_DELAY	500*1000	/* poll twice per second */
 
 static char* connection_names[CONNECTIONS_COUNT] = 
