@@ -20,12 +20,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <libgen.h>
 #include <signal.h>
+#include <string.h>
 #include <unistd.h>
 #include <syslog.h>
 #include <usb.h>
 
-#define SCRIPT		"./buttonpressed.sh %d"
+#define SCRIPT		"buttonpressed.sh %d"
 #define	ESC        	0x1B		/* ASCII value for ESC */
 #define TIMEOUT	   	30 * 1000	/* 30 seconds */
 #define POLL_DELAY	500*1000	/* poll twice per second */
@@ -41,7 +43,7 @@ int usb_interface = 0;
 int usb_in_ep = 0;
 int usb_out_ep = 0;
 int killed = 0;
-
+char* path;
 
 // Returns the scanner device
 struct usb_device* get_scanner_device(void) {
@@ -170,12 +172,21 @@ void execute(const char* program) {
 }
 
 
-int main(void) {
+int main(int argc, char** argv) {
   int i;
   int button;
   pid_t pid;
   
   openlog(NULL, 0, LOG_DAEMON);
+  
+  char* oldpath = getenv("PATH");
+  char* dir = dirname(argv[0]);
+  path = (char*)malloc(strlen(oldpath) + strlen(dir) + 1);
+  strcpy(path, oldpath);
+  strcat(path, ":");
+  strcat(path, dir);
+  setenv("PATH", path, 1);
+  free(path);
   
   pid = fork();
   if (pid < 0) { 
