@@ -30,24 +30,24 @@ int scanbtnd_init(void);
 int scanbtnd_rescan(void);
 
 // Returns a linked list of scanner devices which are supported by this backend.
-scanner_device* scanbtnd_get_supported_devices(void);
+scanner_t* scanbtnd_get_supported_devices(void);
 
 // Opens the given scanner. WARNING! Access to the scanner will be blocked for 
 // other applications (like SANE) until you call scanbtnd_close(,,,), 
-int scanbtnd_open(scanner_device* scanner);
+int scanbtnd_open(scanner_t* scanner);
 
 // Closes the given scanner device. After that, other applications may access the 
 // scanner again.
-int scanbtnd_close(scanner_device* scanner);
+int scanbtnd_close(scanner_t* scanner);
 
 // Query the given scanner's button status. Returns the number of the pressed button 
 // or 0 if no button is currently pressed.
-int scanbtnd_get_button(scanner_device* scanner);
+int scanbtnd_get_button(scanner_t* scanner);
 
 // Get a valid SANE device name for this scanner, e.g. 'epson:libusb:003:017'.
 // Returns NULL if such a device name cannot be determined.
 // The memory for the string is managed by scanbtnd and should not be free'd.
-char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner);
+char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner);
 
 // Clean up internal data structures, free some memory
 int scanbtnd_exit(void);

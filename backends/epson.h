@@ -1,4 +1,5 @@
-// Epson GT-9300 scanner button daemon
+// scanbuttond
+// epson scanner backend
 // Copyleft )c( 2004 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or

@@ -1,5 +1,5 @@
-//
-// Epson GT-9300 scanner button daemon
+// scanbuttond
+// epson scanner backend
 // Copyleft )c( 2004 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program;a if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +22,7 @@
 #include <unistd.h>
 #include "scanbuttond.h"
 #include "interface/libusbi.h"
+#include "epson.h"
 
 #define	ESC        	0x1B		/* ASCII value for ESC */
 
@@ -38,7 +38,7 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 
 static char* backend_name = "Epson";
 
-scanner_device* detected_scanners = NULL;
+scanner_t* detected_scanners = NULL;
 
 
 char* scanbtnd_get_backend_name(void) {
@@ -64,7 +64,7 @@ int match_libusb_scanner(usb_scanner* scanner) {
 void attach_libusb_scanner(usb_scanner* scanner) {
   int index = match_libusb_scanner(scanner);
   if (index < 0) return; // unsupported
-  scanner_device* dev = (scanner_device*)malloc(sizeof(scanner_device));
+  scanner_t* dev = (scanner_t*)malloc(sizeof(scanner_t));
   dev->vendor = usb_device_descriptions[index][0];
   dev->product = usb_device_descriptions[index][1];
   dev->connection = CONNECTION_LIBUSB;
@@ -78,7 +78,7 @@ void attach_libusb_scanner(usb_scanner* scanner) {
 
 
 void detach_scanners(void) {
-  scanner_device* next;
+  scanner_t* next;
   while (detected_scanners != NULL) {
     next = detected_scanners->next;
     free(detected_scanners->sane_device);
@@ -126,12 +126,12 @@ int scanbtnd_rescan(void) {
 }
 
 
-scanner_device* scanbtnd_get_supported_devices(void) {
+scanner_t* scanbtnd_get_supported_devices(void) {
   return detected_scanners;
 }
 
 
-int scanbtnd_open(scanner_device* scanner) {  
+int scanbtnd_open(scanner_t* scanner) {  
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
       return libusb_open((usb_scanner*)scanner->internal_dev_ptr);
@@ -141,7 +141,7 @@ int scanbtnd_open(scanner_device* scanner) {
 }
 
 
-int scanbtnd_close(scanner_device* scanner) {
+int scanbtnd_close(scanner_t* scanner) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
       return libusb_close((usb_scanner*)scanner->internal_dev_ptr);
@@ -151,7 +151,7 @@ int scanbtnd_close(scanner_device* scanner) {
 }
 
 
-int epson_read(scanner_device* scanner, void* buffer, int bytecount) {
+int epson_read(scanner_t* scanner, void* buffer, int bytecount) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
       return libusb_read((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
@@ -160,7 +160,7 @@ int epson_read(scanner_device* scanner, void* buffer, int bytecount) {
   return -1;
 }
 
-int epson_write(scanner_device* scanner, void* buffer, int bytecount) {
+int epson_write(scanner_t* scanner, void* buffer, int bytecount) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
       return libusb_write((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
@@ -170,7 +170,7 @@ int epson_write(scanner_device* scanner, void* buffer, int bytecount) {
 }
 
 
-int scanbtnd_get_button(scanner_device* scanner) {
+int scanbtnd_get_button(scanner_t* scanner) {
   char bytes[255];
   int rcv_len;
   int num_bytes;
@@ -190,7 +190,7 @@ int scanbtnd_get_button(scanner_device* scanner) {
 }
 
 
-char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner) {
+char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
   return scanner->sane_device;
 }
 
