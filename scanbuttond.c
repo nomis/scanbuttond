@@ -31,6 +31,7 @@
 #define	ESC        	0x1B		/* ASCII value for ESC */
 #define TIMEOUT	   	30 * 1000	/* 30 seconds */
 #define POLL_DELAY	500*1000	/* poll twice per second */
+#define LOOP_LIMIT	1200		/* run that many loops before re-initializing scanner */
 
 #define NUM_SUPPORTED_DEVICES 1
 static int supported_devices[NUM_SUPPORTED_DEVICES][2] = {
@@ -52,9 +53,9 @@ struct usb_device* get_scanner_device(void) {
   struct usb_device *device;
   struct usb_interface_descriptor *interface;
   
-  bus = usb_busses;
+  bus = usb_get_busses();
   while (bus != NULL) {
-    device = usb_busses->devices;
+    device = bus->devices;
     while (device != NULL) {
       for (i=0; i<NUM_SUPPORTED_DEVICES; i++) {
         if (device->descriptor.idVendor == supported_devices[i][0] &&
@@ -159,6 +160,7 @@ int get_scanner_button(usb_dev_handle* scanner_handle) {
 // Ensures a graceful exit on SIGHUP/SIGTERM/SIGINT
 void sighandler(int i) {
   killed = 1;
+  usb_release_interface(scanner_handle, usb_interface); 
   usb_close(scanner_handle);
   syslog(LOG_INFO, "quit");
   closelog();
@@ -176,6 +178,7 @@ int main(int argc, char** argv) {
   int i;
   int button;
   pid_t pid;
+  int loops = 0;
   
   openlog(NULL, 0, LOG_DAEMON);
   
@@ -211,29 +214,73 @@ int main(int argc, char** argv) {
   signal(SIGINT, &sighandler);
   
   syslog(LOG_INFO, "scanbuttond started");
-
+  
+  
+  // main loop
   while (killed == 0) {
-    if (scanner_device == NULL) {
-      usleep(POLL_DELAY);
-      continue;
-    }
-    scanner_handle = usb_open(scanner_device);
-    if (scanner_handle == NULL) {
-      usb_close(scanner_handle);
-      usleep(POLL_DELAY);
+    loops++;
+    
+    // re-initialize
+    if (scanner_device == NULL || scanner_handle == NULL || loops >= LOOP_LIMIT) {
+      loops = 0;
+      
+      if (scanner_handle != NULL) {
+        // close usb device
+        syslog(LOG_DEBUG, "closing usb device");
+        usb_close(scanner_handle);
+        scanner_handle = NULL;
+      }
+      
+      usb_init();
+      if (!usb_get_busses()) {
+        usb_find_busses();
+        usb_find_devices();
+      }
+            
+      // search supported devices      
       scanner_device = get_scanner_device();
-      continue;
+      if (scanner_device == NULL) {
+        printf("No scanner found.\n");
+        return 1;
+      }
+
+      // open device
+      syslog(LOG_DEBUG, "opening usb device");
+      scanner_handle = usb_open(scanner_device);    
+      if (scanner_handle == NULL) {
+        usleep(POLL_DELAY);
+        continue;
+      }
+      
+      // set configuration
+      /*syslog(LOG_DEBUG, "setting config"); 
+      if (usb_set_configuration(scanner_handle, 
+            scanner_device->config[0].bConfigurationValue) < 0) {
+        usb_close(scanner_handle);
+        scanner_handle = NULL;
+        usleep(POLL_DELAY);
+        continue;
+      }*/
+            
     }
+    
+    // claim interface
+    syslog(LOG_DEBUG, "claiming interface");
     if (usb_claim_interface(scanner_handle, usb_interface) != 0) {
       usb_close(scanner_handle);
+      scanner_handle = NULL;
       usleep(POLL_DELAY);
       continue;
     }
     
+    // get button status
+    syslog(LOG_DEBUG, "exchanging data");
     button = get_scanner_button(scanner_handle);
-    usb_release_interface(scanner_handle, usb_interface); 
-    usb_close(scanner_handle);
     
+    // release interface
+    syslog(LOG_DEBUG, "releasing interface");
+    usb_release_interface(scanner_handle, usb_interface);
+        
     if (button > 0) { 
     	syslog(LOG_INFO, "button %d has been pressed.", button);
     	char cmd[256];
