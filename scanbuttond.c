@@ -14,9 +14,9 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program;a if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-//
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +25,7 @@
 #include <syslog.h>
 #include <usb.h>
 
-#define SCRIPT		"/root/scanner/buttonpressed.sh %d"
+#define SCRIPT		"./buttonpressed.sh %d"
 #define	ESC        	0x1B		/* ASCII value for ESC */
 #define TIMEOUT	   	30 * 1000	/* 30 seconds */
 #define POLL_DELAY	500*1000	/* poll twice per second */
@@ -131,21 +131,18 @@ int get_scanner_button(usb_dev_handle* scanner_handle) {
   bytes[1] = '!';
   bytes[2] = '\0';
   
-  //syslog(LOG_DEBUG, "usb comm, stage 1");
   i = usb_bulk_write(scanner_handle, usb_out_ep, bytes, 2, TIMEOUT);
   if (i<0) {
     usb_clear_halt(scanner_handle, usb_out_ep); 
     return -1;
   }
   
-  //syslog(LOG_DEBUG, "usb comm, stage 2");    
   i = usb_bulk_read(scanner_handle, usb_in_ep, bytes, 4, TIMEOUT);  
   if (i<0) {
     usb_clear_halt(scanner_handle, usb_in_ep);
     return -1;
   }
-    
-  //syslog(LOG_DEBUG, "usb comm, stage 3");
+  
   rcv_len = bytes[3] << 8 | bytes[2];
   i = usb_bulk_read(scanner_handle, usb_in_ep, bytes, rcv_len, TIMEOUT);
   if (i<0) {

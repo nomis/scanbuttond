@@ -15,6 +15,7 @@ CFLAGS = -g -O2 -W -I$(includedir)
 LD = ld
 LDFLAGS =  -L$(libdir) -lusb
 INSTALL = /bin/install -c
+REMOVE = rm -f
 DISTFILES = Makefile scanbuttond.c
 
 all: scanbuttond
@@ -27,4 +28,8 @@ install: scanbuttond
 
 scanbuttond: scanbuttond.o
 	$(CC) $(LDFLAGS) -o scanbuttond scanbuttond.o
+
+clean:
+	$(REMOVE) scanbuttond
+	$(REMOVE) scanbuttond.o
 
