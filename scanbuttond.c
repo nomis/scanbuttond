@@ -109,6 +109,7 @@ int main(int argc, char** argv) {
   signal(SIGSEGV, &sighandler);
   
   syslog(LOG_INFO, "scanbuttond started");
+  syslog(LOG_INFO, "using backend: %s", scanbtnd_get_backend_name());
 
   // main loop
   while (killed == 0) {

@@ -36,8 +36,14 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Epson", "GT-9300 / Perfection 2400"}
 };
 
+static char* backend_name = "Epson";
 
 scanner_device* detected_scanners = NULL;
+
+
+char* scanbtnd_get_backend_name(void) {
+  return backend_name;
+}
 
 
 // returns -1 if the scanner is unsupported, or the index of the

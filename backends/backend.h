@@ -20,6 +20,9 @@
 
 #include "scanbuttond.h"
 
+// Get the name of this backend.
+char* scanbtnd_get_backend_name(void);
+
 // Initialize backend, search for supported devices
 int scanbtnd_init(void);
 
