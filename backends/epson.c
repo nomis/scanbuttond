@@ -67,29 +67,6 @@ static char* backend_name = "Epson";
 scanner_t* detected_scanners = NULL;
 
 
-void epson_get_model_name(scanner_t* scanner, char* name) {
-  char bytes[42];
-  char model[42];
-  int rcv_len;
-  int num_bytes;
-  
-  bytes[0] = ESC;
-  bytes[1] = 'f';
-  bytes[2] = '\0';
-  
-  num_bytes = epson_write(scanner, (void*)bytes, 2);
-  if (num_bytes != 2) return;
-  num_bytes = epson_read(scanner, (void*)bytes, 4);
-  if (num_bytes != 4) return;
-  rcv_len = bytes[3] << 8 | bytes[2];
-  num_bytes = epson_read(scanner, (void*)bytes, rcv_len);
-  if (num_bytes != rcv_len) return;
-  memcpy(model, (void*)(bytes + 26), 42-26);
-  model[42] = 0;
-  strcpy(name, model);
-}
-
-
 char* scanbtnd_get_backend_name(void) {
   return backend_name;
 }
@@ -124,9 +101,6 @@ void attach_libusb_scanner(usb_scanner_t* scanner) {
   dev->next = detected_scanners;
   detected_scanners = dev;
   syslog(LOG_INFO, "epson-backend: attached scanner \"%s %s\" via libusb", dev->vendor, dev->product);
-  char buf[256];
-  epson_get_model_name(dev, buf);
-  syslog(LOG_INFO, "model name: %s", buf);
 }
 
 
