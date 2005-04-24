@@ -1,6 +1,6 @@
 // scanbuttond
 // libusb interface
-// Copyleft )c( 2004 by Bernhard Stiftner
+// Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -13,19 +13,21 @@
 // General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program;a if not, write to the Free Software
+// along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <usb.h>
+#include <syslog.h>
 #include "libusbi.h"
 
 #define TIMEOUT	   	30 * 1000	/* 30 seconds */
 
-usb_scanner_t* usb_devices = NULL;
+usb_scanner* usb_devices = NULL;
 
 
 int libusb_init(void) {
@@ -121,7 +123,7 @@ int libusb_search_out_endpoint(struct usb_device* device) {
 
 
 void libusb_attach_device(struct usb_device* device) {
-  usb_scanner_t* scanner = (usb_scanner_t*)malloc(sizeof(usb_scanner_t));
+  usb_scanner* scanner = (usb_scanner*)malloc(sizeof(usb_scanner));
   scanner->vendorID = device->descriptor.idVendor;
   scanner->productID = device->descriptor.idProduct;
   
@@ -147,14 +149,14 @@ void libusb_attach_device(struct usb_device* device) {
   if (scanner->in_endpoint < 0) {
     free(scanner);
     return;
-  }  
+  }
   scanner->next = usb_devices;
   usb_devices = scanner;
 }
 
 
 void libusb_detach_devices(void) {
-  usb_scanner_t* next;
+  usb_scanner* next;
   while (usb_devices != NULL) {
     next = usb_devices->next;
     free(usb_devices->location);
@@ -186,31 +188,63 @@ void libusb_rescan(void) {
 }
   
 
-usb_scanner_t* libusb_get_devices(void) {
+usb_scanner* libusb_get_devices(void) {
   return usb_devices;
 }
 
 
-int libusb_open(usb_scanner_t* scanner) {
+int libusb_open(usb_scanner* scanner) {
+  int result;
+  
+  // if usb busses or devices have been added or removed, we return
+  // an error to make scanbuttond update its device list
+  usb_find_busses();
+  if (usb_find_devices() != 0) {
+    syslog(LOG_INFO, "usb devices have been added/removed. forcing update of device list...");
+    return -ENODEV;
+  }
+  
   scanner->handle = usb_open(scanner->device);
   if (scanner->handle == NULL) {
-    usb_close(scanner->handle);
-    return -1;
+    syslog(LOG_INFO, "usb_open failed!");
+    return -ENODEV;
   }
-  if (usb_claim_interface(scanner->handle, scanner->interface) != 0) {
-    usb_close(scanner->handle);
-    return -1;
+  
+  result = usb_claim_interface(scanner->handle, scanner->interface);
+  if (result != 0 && result != -EBUSY) {
+    // Claiming the device failed, but it's not busy!?!
+    // Perhaps we have to explicitly set its configuration and try again...
+    syslog(LOG_INFO, "claiming the device failed, but it's not busy. Trying to set configuration.");
+    if (usb_set_configuration(scanner->handle, 
+        usb_device(scanner->handle)->config[0].bConfigurationValue) != 0) {
+      syslog(LOG_INFO, "usb_set_configuration failed!");
+      usb_close(scanner->handle);
+      return -ENODEV;
+    }
+    result = usb_claim_interface(scanner->handle, scanner->interface);
   }
+  if (result != 0) {
+    if (result == -EBUSY) 
+    {
+     syslog(LOG_INFO, "usb_claim_interface failed. the device is busy.");
+    } else
+    { 
+     syslog(LOG_INFO, "usb_claim_interface failed. the device is not? busy.");
+    }
+    usb_close(scanner->handle);
+    return -EBUSY;
+  }
+  
   return 0;
 }
 
 
-int libusb_close(usb_scanner_t* scanner) {
+int libusb_close(usb_scanner* scanner) {
   return usb_close(scanner->handle);
 }
 
 
-int libusb_read(usb_scanner_t* scanner, void* buffer, int bytecount) {
+int libusb_read(usb_scanner* scanner, void* buffer, int bytecount) {
   int num_bytes = usb_bulk_read(scanner->handle, scanner->in_endpoint, buffer, bytecount, TIMEOUT);  
   if (num_bytes<0) {
     usb_clear_halt(scanner->handle, scanner->in_endpoint);
@@ -220,7 +254,7 @@ int libusb_read(usb_scanner_t* scanner, void* buffer, int bytecount) {
 }
 
 
-int libusb_write(usb_scanner_t* scanner, void* buffer, int bytecount) {
+int libusb_write(usb_scanner* scanner, void* buffer, int bytecount) {
   int num_bytes = usb_bulk_write(scanner->handle, scanner->out_endpoint, buffer, bytecount, TIMEOUT);
   if (num_bytes<0) {
     usb_clear_halt(scanner->handle, scanner->in_endpoint);
@@ -228,6 +262,16 @@ int libusb_write(usb_scanner_t* scanner, void* buffer, int bytecount) {
   }
   return num_bytes;
 }
+
+int libusb_control_msg(usb_scanner* scanner, int requesttype, int request, int value, int index, void* bytes, int size) {
+  int num_bytes = usb_control_msg(scanner->handle, requesttype, request, value, index, bytes, size, TIMEOUT);
+  if (num_bytes<0) {
+    usb_clear_halt(scanner->handle, scanner->in_endpoint);
+    return 0;
+  }
+  return num_bytes;
+}
+
 
 
 int libusb_exit(void) {

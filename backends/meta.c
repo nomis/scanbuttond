@@ -13,7 +13,7 @@
 // General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program;a if not, write to the Free Software
+// along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include <stdio.h>
@@ -30,84 +30,21 @@
 static char* backend_name = "Dynamic Module Loader";
 static char* config_file = "/etc/scanbuttond/meta.conf";
 
-scanner_t* scanners = NULL;
+scanner_device* scanners = NULL;
 backend_t* backends = NULL;
 
 
-char* scanbtnd_get_backend_name(void) {
-  return backend_name;
-}
-
-
-void attach_scanner(scanner_t* scanner, backend_t* backend) {
-  scanner_t* dev = (scanner_t*)malloc(sizeof(scanner_t));
-  dev->vendor = scanner->vendor;
-  dev->product = scanner->product;
-  dev->connection = scanner->connection;
-  dev->internal_dev_ptr = scanner->internal_dev_ptr;
-  dev->sane_device = scanner->sane_device;
-  dev->meta_info = (void*)backend;
-  dev->next = scanners;
-  scanners = dev;
-  syslog(LOG_INFO, "meta-backend: attached scanner \"%s %s\"", scanner->vendor, scanner->product);
-}
-
-
-void attach_scanners(scanner_t* scanners, backend_t* backend) {
-  scanner_t* dev = scanners;
-  while (dev != NULL) {
-    attach_scanner(dev, backend);
-    dev = dev->next;
-  }
-}
-
-
-void detach_scanners(void) {
-  scanner_t* next;
-  while (scanners != NULL) {
-    next = scanners->next;    
-    free(scanners);
-    scanners = next;
-  }
-}
-
-
-void attach_backend(backend_t* backend) {  
-  backend->next = backends;
-  backends = backend;  
-  backend->scanbtnd_init();  
-  attach_scanners(backend->scanbtnd_get_supported_devices(), backend);  
-}
-
-
-void detach_backend(backend_t* backend) {
-  backend->scanbtnd_exit();
-  dlclose(backend->handle);
-  free(backend);
-}
-
-		
-void detach_backends(void) {
-  backend_t* next;
-  while (backends != NULL) {
-    next = backends->next;    
-    detach_backend(backends);
-    backends = next;
-  }
-  detach_scanners();
-}
-
-
-backend_t* lookup_backend(scanner_t* scanner) {
-  return (backend_t*)scanner->meta_info;
-}
-
-
-backend_t* load_backend(const char* path) {
-
-  syslog(LOG_INFO, "meta-backend: loading \"%s\"", path);
-
-  void* dll_handle = dlopen(path, RTLD_LAZY);
+backend_t* load_backend(const char* path, const char* name) {
+  const char* prefix = "lib";
+  const char* suffix = ".so";
+  char* libpath = (char*)malloc(strlen(path) + strlen(name) + strlen(prefix) + strlen(suffix) + 2);
+  strcpy(libpath, path);
+  strcat(libpath, "/");
+  strcat(libpath, prefix);
+  strcat(libpath, name);
+  strcat(libpath, suffix);
+  void* dll_handle = dlopen(libpath, RTLD_LAZY);
+  free(libpath);
   if (!dll_handle) return NULL;
   dlerror();  // Clear any existing error
   backend_t* backend = (backend_t*)malloc(sizeof(backend_t));
@@ -122,15 +59,87 @@ backend_t* load_backend(const char* path) {
   backend->scanbtnd_get_sane_device_descriptor = dlsym(dll_handle, "scanbtnd_get_sane_device_descriptor");
   backend->scanbtnd_exit = dlsym(dll_handle, "scanbtnd_exit");
   
-  // don't load another meta backend
-  if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name()) == 0) {
-    syslog(LOG_INFO, "meta-backend: refusing to load another meta backend");
-    dlclose(backend->handle);
-    free(backend);
-    return NULL;
-  }
-  
   return backend;
+}
+
+
+void unload_backend(backend_t* backend) {
+  dlclose(backend->handle);
+  free(backend);
+}
+
+
+char* scanbtnd_get_backend_name(void) {
+  return backend_name;
+}
+
+
+void attach_scanner(scanner_device* scanner, backend_t* backend) {
+  scanner_device* dev = (scanner_device*)malloc(sizeof(scanner_device));
+  dev->vendor = scanner->vendor;
+  dev->product = scanner->product;
+  dev->connection = scanner->connection;
+  dev->internal_dev_ptr = scanner->internal_dev_ptr;
+  dev->sane_device = scanner->sane_device;
+  dev->meta_info = (void*)backend;
+  dev->lastbutton = 0;
+  dev->next = scanners;
+  scanners = dev;
+  syslog(LOG_INFO, "meta-backend: attached scanner \"%s %s\"", scanner->vendor, scanner->product);
+}
+
+
+void attach_scanners(scanner_device* scanners, backend_t* backend) {
+  scanner_device* dev = scanners;
+  while (dev != NULL) {
+    attach_scanner(dev, backend);
+    dev = dev->next;
+  }
+}
+
+
+void detach_scanners(void) {
+  scanner_device* next;
+  while (scanners != NULL) {
+    next = scanners->next;    
+    free(scanners);
+    scanners = next;
+  }
+}
+
+
+int attach_backend(backend_t* backend) {  
+  // don't load another meta backend
+  if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name())==0) {
+    return -1;
+  }
+  backend->next = backends;
+  backends = backend;  
+  backend->scanbtnd_init();  
+  attach_scanners(backend->scanbtnd_get_supported_devices(), backend);
+  return 0;
+}
+
+
+void detach_backend(backend_t* backend) {
+  backend->scanbtnd_exit();
+  unload_backend(backend);
+}
+
+		
+void detach_backends(void) {
+  backend_t* next;
+  while (backends != NULL) {
+    next = backends->next;    
+    detach_backend(backends);
+    backends = next;
+  }
+  detach_scanners();
+}
+
+
+backend_t* lookup_backend(scanner_device* scanner) {
+  return (backend_t*)scanner->meta_info;
 }
 
 
@@ -160,14 +169,10 @@ int scanbtnd_init(void) {
   strip_newline(libdir);
   while (fgets(lib, MAX_CONFIG_LINE, f)) {
     strip_newline(lib);
-    buf = (char*)malloc(strlen(libdir) + strlen(lib) + 17);
-    strcpy(buf, libdir);
-    strcat(buf, "/libscanbtnd-");
-    strcat(buf, lib);
-    strcat(buf, ".so");    
-    backend = load_backend(buf);
-    attach_backend(backend);
-    free(buf);
+    backend = load_backend(libdir, lib);
+    if (attach_backend(backend) != 0) {
+      unload_backend(backend);
+    }
   }
   fclose(f);
   
@@ -192,33 +197,33 @@ int scanbtnd_rescan(void) {
 }
 
 
-scanner_t* scanbtnd_get_supported_devices(void) {
+scanner_device* scanbtnd_get_supported_devices(void) {
   return scanners;
 }
 
 
-int scanbtnd_open(scanner_t* scanner) {  
+int scanbtnd_open(scanner_device* scanner) {  
   backend_t* backend = lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_open(scanner);
 }
 
 
-int scanbtnd_close(scanner_t* scanner) {
+int scanbtnd_close(scanner_device* scanner) {
   backend_t* backend = lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_close(scanner);
 }
 
 
-int scanbtnd_get_button(scanner_t* scanner) {
+int scanbtnd_get_button(scanner_device* scanner) {
   backend_t* backend = lookup_backend(scanner);
   if (backend == NULL) return 0;
   return backend->scanbtnd_get_button(scanner);
 }
 
 
-char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
+char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner) {
   backend_t* backend = lookup_backend(scanner);
   if (backend == NULL) return NULL;
   return backend->scanbtnd_get_sane_device_descriptor(scanner);

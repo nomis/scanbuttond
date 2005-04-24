@@ -13,7 +13,7 @@
 // General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program;a if not, write to the Free Software
+// along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #ifndef __META_H_INCLUDED
@@ -28,17 +28,20 @@ struct backend {
   char* (*scanbtnd_get_backend_name)(void);
   int (*scanbtnd_init)(void);
   int (*scanbtnd_rescan)(void);
-  scanner_t* (*scanbtnd_get_supported_devices)(void);
-  int (*scanbtnd_open)(scanner_t* scanner);
-  int (*scanbtnd_close)(scanner_t* scanner);
-  int (*scanbtnd_get_button)(scanner_t* scanner);
-  char* (*scanbtnd_get_sane_device_descriptor)(scanner_t* scanner);
+  scanner_device* (*scanbtnd_get_supported_devices)(void);
+  int (*scanbtnd_open)(scanner_device* scanner);
+  int (*scanbtnd_close)(scanner_device* scanner);
+  int (*scanbtnd_get_button)(scanner_device* scanner);
+  char* (*scanbtnd_get_sane_device_descriptor)(scanner_device* scanner);
   int (*scanbtnd_exit)(void);
   
   void* handle;  // handle for dlopen/dlsym/dlclose
   
   backend_t* next;
 };
-  
+
+backend_t* load_backend(const char* path, const char* name);
+
+void unload_backend(backend_t* backend);
 
 #endif

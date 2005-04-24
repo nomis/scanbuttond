@@ -1,6 +1,5 @@
-// scanbuttond
-// epson scanner backend
-// Copyleft )c( 2004 by Bernhard Stiftner
+// Epson GT-9300 scanner button daemon
+// Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -13,7 +12,7 @@
 // General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program;a if not, write to the Free Software
+// along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #ifndef __EPSON_H_INCLUDED
