@@ -1,6 +1,6 @@
 //
 // Epson GT-9300 scanner button daemon
-// Copyleft )c( 2004 by Bernhard Stiftner
+// Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -13,7 +13,7 @@
 // General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program;a if not, write to the Free Software
+// along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
@@ -27,18 +27,19 @@
 
 char* scanbtnd_get_connection_name(int connection);
 
-struct scanner;
-typedef struct scanner scanner_t;
+struct scanner_device;
+typedef struct scanner_device scanner_device;
 
-struct scanner {
+struct scanner_device {
 	char* vendor;
 	char* product;
 	int connection;
 	void* internal_dev_ptr;
 	char* sane_device;
-	void* meta_info;	// reserved for the meta backend
+	void* meta_info;
+        int lastbutton;
 	
-	scanner_t* next;
+        scanner_device* next;
 };
 
 #endif

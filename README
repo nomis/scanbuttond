@@ -1,14 +1,11 @@
-Scanner Button Daemon (scanbuttond), Version 0.2
-================================================
+Scanner Button Daemon (scanbuttond), Version 0.2.1
+==================================================
 
 
 First things first
 ------------------
 
 This software is in its very early stages of development.
-As of version 0.2, there is only one supported scanner
-(Epson GT-9300 aka "Perfection 2400") and only one supported
-connection interface (libusb). 
 There may be tons of critical bugs, and it's unlikely that
 this software will work straight out of the box.
 Note that this daemon requires root privileges which
@@ -48,13 +45,19 @@ type
 > make install
 
 This will install the following files:
-/usr/local/bin/scanbuttond (the main executable)
-/usr/local/lib/scanbtnd/libepson.so (the epson backend)
-/usr/local/lib/scanbtnd/libepson.so.1
-/usr/local/lib/scanbtnd/libepson.so.1.0
-/root/buttonpressed.sh (the shell script which is invoked
-                        when a button has been pressed)
-			
+/usr/local/bin/scanbuttond
+/usr/local/lib/scanbuttond/libepson.so
+/usr/local/lib/scanbuttond/libepson.so.1
+/usr/local/lib/scanbuttond/libepson.so.1.0
+/usr/local/lib/scanbuttond/libplustek.so
+/usr/local/lib/scanbuttond/libplustek.so.1
+/usr/local/lib/scanbuttond/libplustek.so.1.0
+/usr/local/lib/scanbuttond/libmeta.so
+/usr/local/lib/scanbuttond/libmeta.so.1
+/usr/local/lib/scanbuttond/libmeta.so.1.0
+/etc/scanbuttond/buttonpressed.sh
+/etc/scanbuttond/meta.conf
+
 
 Usage
 -----
@@ -77,7 +80,28 @@ which should ensure a clean shutdown even when it's killed.
 Supported scanners
 ------------------
 
-* Epson GT-9300, also known as "Perfection 2400" (via libusb)
+Using the epson backend and libusb connection:
+* Epson Expression 1600 (expected to work)
+* Epson Expression 1680 (expected to work)
+* Epson Perfection 610 (expected to work)
+* Epson Perfection 636U (expected to work)
+* Epson Perfection 640 (expected to work)
+* Epson Perfection 1200U (expected to work)
+* Epson Perfection 1240 (expected to work)
+* Epson Perfection 1640 (expected to work)
+* Epson Perfection 1650 (expected to work)
+* Epson Perfection 1660 (expected to work)
+* Epson Perfection 2400 (working, tested)
+* Epson Perfection 2450 (expected to work)
+* Epson Perfection 3200 (expected to work)
+* Epson CX3200 (working, tested)
+
+Using the plustek backend and libusb connection:
+* Canon CanonScan N1220U (experimental)
+
+Note: the plustek backend is considered experimental, and I
+strongly advise you to have a look at backends/plustek.c before
+attempting to use it.
 
 
 How to link actions to buttons
@@ -87,7 +111,7 @@ Whenever a scanner button has been pressed, scanbuttond
 starts a shell script and passes it the button number and
 the SANE scanner name as command line arguments.
 By default, this shell script is installed as
-/root/buttonpressed.sh. 
+/etc/scanbuttond/buttonpressed.sh. 
 Please modify it to fit your purposes.
 
 
@@ -113,6 +137,17 @@ If you want to help, please send me an email (see below).
 Version History
 ---------------
 
+0.2.2, (not released yet)
+  * niash backend
+  * snapscan backend
+  * bugfixes in usb communication layer
+
+0.2.1, released Mar 14, 2005
+  * added plustek and meta backend
+  * added support for more scanners to the epson backend
+  * SIGSEGV bug fixed, scanner hotplugging seems to work now
+  * using /etc/scanbuttond as config file directory
+
 0.2, released Dec 31, 2004
   * new, modular architecture
   * support for multiple scanners
@@ -120,7 +155,16 @@ Version History
   
 0.1, released Oct 17, 2004
   * first public version
-  
+
+
+Credits
+-------
+
+* Hans Verkuil for writing the plustek backend
+* James Gilliland for Epson CX3200 support/testing
+* Dirk Wriedt for the niash backend and some general 
+  improvements and bugfixes
+
 
 Contact
 -------

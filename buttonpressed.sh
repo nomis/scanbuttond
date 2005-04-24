@@ -8,12 +8,19 @@
 #        like scanimage.
 
 case $1 in
-	1)	# button 1 has been pressed
-		# print a grayscale copy
-		scanimage --device-name $2 --format tiff --mode Gray --quick-format A4 \
-		--resolution 300 --sharpness 0 --brightness -3 \
-		--gamma-correction "High contrast printing" > /tmp/scan.tiff
-		tiff2ps -2 -p -z -w 8.27 -h 11.69 /tmp/scan.tiff | lpr
+	1)
+		echo "button 1 has been pressed on $2"
+		
+		# This example turns your scanner+printer into a photocopier.
+		# Fine-tuned for the Epson Perfection 2400, the HP LaserJet 1200 and
+		# ISO A4 paper size so that the scanned document matches the printer
+		# output as closely as possible.
+		#
+		# scanimage --device-name $2 --format tiff --mode Gray --quick-format A4 \
+		# --resolution 300 --sharpness 0 --brightness -3 \
+		# --gamma-correction "High contrast printing" > /tmp/scan.tiff
+		# tiff2ps -z -w 8.27 -h 11.69 /tmp/scan.tiff | lpr
+		#
 		;;
 	2)
 		echo "button 2 has been pressed on $2"

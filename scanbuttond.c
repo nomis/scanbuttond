@@ -1,5 +1,5 @@
 // scanbuttond
-// Copyleft )c( 2004 by Bernhard Stiftner
+// Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,7 +12,7 @@
 // General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program;a if not, write to the Free Software
+// along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
@@ -23,11 +23,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <errno.h>
 #include "backends/backend.h"
 
 // the button number and the SANE device name are passed to the script as arguments
 #define SCRIPT		"/etc/scanbuttond/buttonpressed.sh %d %s"
-#define POLL_DELAY	500*1000	/* poll twice per second */
+#define POLL_DELAY	333*1000	/* poll three times a second */
+#define RETRY_DELAY	2000*1000	/* if the device is currently not available,
+					   wait 2 seconds and try again */
 
 static char* connection_names[CONNECTIONS_COUNT] = 
     { "none", "libusb" };
@@ -56,8 +59,8 @@ void execute(const char* program) {
 }
 
 
-void list_devices(scanner_t* devices) {
-  scanner_t* dev = devices;
+void list_devices(scanner_device* devices) {
+  scanner_device* dev = devices;
   while (dev != NULL) {
     syslog(LOG_INFO, "found scanner: vendor=\"%s\", product=\"%s\", connection=\"%s\", sane_name=\"%s\"",
       dev->vendor, dev->product, scanbtnd_get_connection_name(dev->connection),
@@ -70,9 +73,10 @@ void list_devices(scanner_t* devices) {
 int main(int argc, char** argv) {
   int i;
   int button;
+  int result;
   pid_t pid;
-  scanner_t* dev;
-  
+  scanner_device* dev;
+ 
   openlog(NULL, 0, LOG_DAEMON);
   
   char* oldpath = getenv("PATH");
@@ -89,14 +93,17 @@ int main(int argc, char** argv) {
     printf("Can't fork!\n");
     exit(1);
   } else if (pid != 0) {
+    sleep(1);
     return 0;
-  }
+  }  
   
   scanbtnd_init();
   
-  scanner_t* devices = scanbtnd_get_supported_devices();
+  scanner_device* devices = scanbtnd_get_supported_devices();
   
   if (devices == NULL) {
+    scanbtnd_exit();
+    closelog();
     printf("No scanner found.\n");
     return 1;
   }
@@ -109,7 +116,6 @@ int main(int argc, char** argv) {
   signal(SIGSEGV, &sighandler);
   
   syslog(LOG_INFO, "scanbuttond started");
-  syslog(LOG_INFO, "using backend: %s", scanbtnd_get_backend_name());
 
   // main loop
   while (killed == 0) {
@@ -121,21 +127,31 @@ int main(int argc, char** argv) {
     
     dev = devices;    
     while (dev != NULL) {
-      if (scanbtnd_open(dev) != 0) {
-        // force re-scan 
-        devices = NULL;
+      result = scanbtnd_open(dev);
+      if (result != 0) {
+        if (result == -ENODEV) {
+          // device has been disconnected, force re-scan
+          syslog(LOG_INFO, "device rescan forced.");
+          devices = NULL;
+        }                  
+        usleep(RETRY_DELAY);
         break;
       }
+      
       button = scanbtnd_get_button(dev);
       scanbtnd_close(dev);
-      
-      if (button > 0) { 
+       
+      if ((button > 0) && (button != dev->lastbutton)) { 
         syslog(LOG_INFO, "button %d has been pressed.", button);
+        dev->lastbutton = button;
         char cmd[256];
 	sprintf(cmd, SCRIPT, button, scanbtnd_get_sane_device_descriptor(dev));
         execute(cmd);
       }
-    
+      if ((button == 0) && (dev->lastbutton > 0)) {
+        syslog(LOG_INFO, "button %d has been released.", dev->lastbutton);
+        dev->lastbutton = button;
+      } 
       dev = dev->next;
     }
     
