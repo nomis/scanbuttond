@@ -158,7 +158,6 @@ int scanbtnd_init(void) {
   // read config file
   char libdir[MAX_CONFIG_LINE];
   char lib[MAX_CONFIG_LINE];
-  char* buf;
   backend_t* backend;
   FILE* f = fopen(config_file, "r");
   if (f == NULL) {

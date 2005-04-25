@@ -171,7 +171,6 @@ int plustek_write(scanner_device* scanner, void* buffer, int bytecount) {
 
 int scanbtnd_get_button(scanner_device* scanner) {
   unsigned char bytes[255];
-  int rcv_len;
   int num_bytes;
   int button_mask = 4;
 

@@ -1,6 +1,6 @@
 // niash scanner backend
 // Copyleft )c( 2005 by Bernhard Stiftner
-// Thanks to J. Javier Maestro for sniffing the button codes ;-)
+// Copyleft )c( 2005 by Dirk Wriedt
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as

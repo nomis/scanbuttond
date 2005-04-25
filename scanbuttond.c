@@ -71,7 +71,6 @@ void list_devices(scanner_device* devices) {
 
 
 int main(int argc, char** argv) {
-  int i;
   int button;
   int result;
   pid_t pid;

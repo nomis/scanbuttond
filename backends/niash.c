@@ -1,5 +1,6 @@
-// Snapscan scanner backend
+// Niash scanner backend
 // Copyleft )c( 2005 by Bernhard Stiftner
+// Copyleft )c( 2005 by Dirk Wriedt
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -157,24 +158,6 @@ int scanbtnd_close(scanner_device* scanner) {
 }
 
 
-int niash_read(scanner_device* scanner, void* buffer, int bytecount) {
-  switch (scanner->connection) {
-    case CONNECTION_LIBUSB:
-      return libusb_read((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
-    break;
-  }
-  return -1;
-}
-
-int niash_write(scanner_device* scanner, void* buffer, int bytecount) {
-  switch (scanner->connection) {
-    case CONNECTION_LIBUSB:
-      return libusb_write((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
-    break;
-  }
-  return -1;
-}
-
 int niash_control_msg(scanner_device* scanner, int requesttype, int request, int value, int index, void* buffer, int bytecount) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
@@ -187,14 +170,11 @@ int niash_control_msg(scanner_device* scanner, int requesttype, int request, int
 
 int scanbtnd_get_button(scanner_device* scanner) {
   unsigned char bytes[255];
-  unsigned char ausgabe[255];
   int value[255];
   int requesttype[255];
-  int rcv_len;
   int num_bytes;
   int button;
-  int i; 
-  unsigned char returnvalue;
+  int i;
   /* The button status seems to be held in Register 0x2e of the
      scanner's USB - IEEE1284 bridge
      I checked the usb sniffer logs against hp3300c_xfer.h (hp3300 sane backend)
@@ -217,7 +197,7 @@ int scanbtnd_get_button(scanner_device* scanner) {
   requesttype[4]=0x40; bytes[4] = 0x14; value[4]=0x87; /* SPP_CONTROL */
   for(i=0;i<5;i++) {
     num_bytes=niash_control_msg(scanner, requesttype[i], 0x0c, value[i], 0, (void*)&bytes + i, 0x01);
-  if (num_bytes < 0 ) return 0; 
+    if (num_bytes < 0 ) return 0; 
   } 
   switch (bytes[3]) {
     case 0x02: button = 1; break;
