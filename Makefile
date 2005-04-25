@@ -11,7 +11,7 @@ libdir = ${exec_prefix}/lib/scanbuttond
 
 CC = gcc
 INCLUDES = -I. -I$(includedir)
-CFLAGS = -g -O2 -W -I$(includedir) -I.
+CFLAGS = -g -O2 -Wall -I$(includedir) -I.
 LD = ld
 LDFLAGS =  -L$(libdir) -lusb
 INSTALL = /usr/bin/install -c
