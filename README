@@ -6,10 +6,8 @@ First things first
 ------------------
 
 This software is in its very early stages of development.
-There may be tons of critical bugs, and it's unlikely that
-this software will work straight out of the box.
-Note that this daemon requires root privileges which
-should be considered a security risk.
+Although this daemon seems to work for most people, there
+may still be lots of critical bugs.
 Be prepared for the worst!
 
 
