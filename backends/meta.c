@@ -37,6 +37,7 @@ backend_t* backends = NULL;
 backend_t* load_backend(const char* path, const char* name) {
   const char* prefix = "lib";
   const char* suffix = ".so";
+  char* error;
   char* libpath = (char*)malloc(strlen(path) + strlen(name) + strlen(prefix) + strlen(suffix) + 2);
   strcpy(libpath, path);
   strcat(libpath, "/");
@@ -44,21 +45,80 @@ backend_t* load_backend(const char* path, const char* name) {
   strcat(libpath, name);
   strcat(libpath, suffix);
   void* dll_handle = dlopen(libpath, RTLD_LAZY);
+  if (!dll_handle) {
+    syslog(LOG_ERR, "meta-backend: failed to load \"%s\". Error message: \"%s\"",
+      libpath, dlerror());
+    free(libpath);
+    return NULL;
+  }
   free(libpath);
-  if (!dll_handle) return NULL;
   dlerror();  // Clear any existing error
   backend_t* backend = (backend_t*)malloc(sizeof(backend_t));
   backend->handle = dll_handle;
   backend->scanbtnd_get_backend_name = dlsym(dll_handle, "scanbtnd_get_backend_name");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }
   backend->scanbtnd_init = dlsym(dll_handle, "scanbtnd_init");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);    
+    return NULL;
+  }
   backend->scanbtnd_rescan = dlsym(dll_handle, "scanbtnd_rescan");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }
   backend->scanbtnd_get_supported_devices = dlsym(dll_handle, "scanbtnd_get_supported_devices");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }
   backend->scanbtnd_open = dlsym(dll_handle, "scanbtnd_open");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }
   backend->scanbtnd_close = dlsym(dll_handle, "scanbtnd_close");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }
   backend->scanbtnd_get_button = dlsym(dll_handle, "scanbtnd_get_button");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }
   backend->scanbtnd_get_sane_device_descriptor = dlsym(dll_handle, "scanbtnd_get_sane_device_descriptor");
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }
   backend->scanbtnd_exit = dlsym(dll_handle, "scanbtnd_exit");
-  
+  if ((error = dlerror()) != NULL) {
+    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
+    dlclose(dll_handle);
+    free(backend);
+    return NULL;
+  }  
+
   return backend;
 }
 
@@ -92,9 +152,15 @@ void attach_scanner(scanner_device* scanner, backend_t* backend) {
 void attach_scanners(scanner_device* scanners, backend_t* backend) {
   scanner_device* dev = scanners;
   while (dev != NULL) {
+    syslog(LOG_INFO, "meta-backend: attaching scanner \"%s %s\"", dev->vendor, dev->product);
     attach_scanner(dev, backend);
     dev = dev->next;
   }
+}
+
+
+void detach_scanner(scanner_device* scanner) {
+  free(scanner);
 }
 
 
@@ -102,7 +168,7 @@ void detach_scanners(void) {
   scanner_device* next;
   while (scanners != NULL) {
     next = scanners->next;    
-    free(scanners);
+    detach_scanner(scanners);
     scanners = next;
   }
 }
@@ -111,8 +177,10 @@ void detach_scanners(void) {
 int attach_backend(backend_t* backend) {  
   // don't load another meta backend
   if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name())==0) {
+    syslog(LOG_INFO, "meta-backend: refusing to load another meta backend!");
     return -1;
   }
+  syslog(LOG_INFO, "meta-backend: attaching backend: %s", backend->scanbtnd_get_backend_name());
   backend->next = backends;
   backends = backend;  
   backend->scanbtnd_init();  
@@ -134,7 +202,6 @@ void detach_backends(void) {
     detach_backend(backends);
     backends = next;
   }
-  detach_scanners();
 }
 
 
@@ -169,8 +236,8 @@ int scanbtnd_init(void) {
   while (fgets(lib, MAX_CONFIG_LINE, f)) {
     strip_newline(lib);
     backend = load_backend(libdir, lib);
-    if (attach_backend(backend) != 0) {
-      unload_backend(backend);
+    if (backend != NULL) {
+      attach_backend(backend);
     }
   }
   fclose(f);
@@ -230,6 +297,7 @@ char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner) {
 
 
 int scanbtnd_exit(void) {
+  detach_scanners();
   detach_backends();
   return 0;
 }

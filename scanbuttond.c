@@ -120,6 +120,7 @@ int main(int argc, char** argv) {
   while (killed == 0) {
   
     if (devices == NULL) {
+      syslog(LOG_INFO, "performing device rescan.");
       scanbtnd_rescan();
       devices = scanbtnd_get_supported_devices();
     }
@@ -130,7 +131,7 @@ int main(int argc, char** argv) {
       if (result != 0) {
         if (result == -ENODEV) {
           // device has been disconnected, force re-scan
-          syslog(LOG_INFO, "device rescan forced.");
+          syslog(LOG_INFO, "device rescan will be performed...");
           devices = NULL;
         }                  
         usleep(RETRY_DELAY);

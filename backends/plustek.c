@@ -65,6 +65,7 @@ void attach_libusb_scanner(usb_scanner* scanner) {
   dev->product = usb_device_descriptions[index][1];
   dev->connection = CONNECTION_LIBUSB;
   dev->internal_dev_ptr = (void*)scanner;
+  dev->lastbutton = 0;
   dev->sane_device = (char*)malloc(strlen(scanner->location) + strlen(descriptor_prefix) + 1);
   strcpy(dev->sane_device, descriptor_prefix);
   strcat(dev->sane_device, scanner->location);  
