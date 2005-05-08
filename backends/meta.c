@@ -26,6 +26,7 @@
 #include "meta.h"
 
 #define MAX_CONFIG_LINE 255
+#define MAX_SCANNERS_PER_BACKEND 16
 
 static char* backend_name = "Dynamic Module Loader";
 static char* config_file = "/etc/scanbuttond/meta.conf";
@@ -151,10 +152,17 @@ void attach_scanner(scanner_device* scanner, backend_t* backend) {
 
 void attach_scanners(scanner_device* scanners, backend_t* backend) {
   scanner_device* dev = scanners;
+  int count = 0;
   while (dev != NULL) {
+    if (count >= MAX_SCANNERS_PER_BACKEND) {
+      syslog(LOG_WARNING, "meta-backend: refusing to attach scanner \"%s %s\": Too many scanners!",
+        dev->vendor, dev->product);
+      return;
+    }
     syslog(LOG_INFO, "meta-backend: attaching scanner \"%s %s\"", dev->vendor, dev->product);
     attach_scanner(dev, backend);
     dev = dev->next;
+    count++;
   }
 }
 
