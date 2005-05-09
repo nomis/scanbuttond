@@ -95,7 +95,19 @@ Using the epson backend and libusb connection:
 * Epson CX3200 (working, tested)
 
 Using the plustek backend and libusb connection:
-* Canon CanonScan N1220U (experimental)
+* Canon CanoScan N1220U (experimental)
+* Canon CanoScan D660U (experimental)
+
+Using the snapscan backend and libusb connection
+* Epson Perfection 2480 (experimental, only in CVS version)
+* Epson Perfection 2580 (experimental, only in CVS version)
+
+Using the niash backend and libusb connection
+* Agfa Snapscan Touch (experimental, only in CVS version)
+* HP Scanjet 3300c (experimental, only in CVS version)
+* HP Scanjet 3400c (experimental, only in CVS version)
+* HP Scanjet 4300c (experimental, only in CVS version)
+
 
 Note: the plustek backend is considered experimental, and I
 strongly advise you to have a look at backends/plustek.c before
