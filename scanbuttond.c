@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
       if (devices == NULL) {
         syslog(LOG_INFO, "after rescan: no new devices found.");
         usleep(RETRY_DELAY);
-        break;
+        continue;
       }
     }
     
