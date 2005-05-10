@@ -98,6 +98,8 @@ int main(int argc, char** argv) {
     return 0;
   }  
   
+  execute(INITSCANNER_SCRIPT);
+  
   scanbtnd_init();
   
   scanner_device* devices = scanbtnd_get_supported_devices();
