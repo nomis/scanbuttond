@@ -159,7 +159,7 @@ void attach_scanners(scanner_device* devices, backend_t* backend) {
         dev->vendor, dev->product);
       return;
     }
-    syslog(LOG_INFO, "meta-backend: attaching scanner \"%s %s\"", dev->vendor, dev->product);
+    //syslog(LOG_INFO, "meta-backend: attaching scanner \"%s %s\"", dev->vendor, dev->product);
     attach_scanner(dev, backend);
     dev = dev->next;
     count++;

@@ -211,7 +211,7 @@ int libusb_open(usb_scanner* scanner) {
   }
   
   result = usb_claim_interface(scanner->handle, scanner->interface);
-  syslog(LOG_INFO, "usb_claim_interface returned %d", result);
+  //syslog(LOG_INFO, "usb_claim_interface returned %d", result);
   if (result != 0 && result != -EBUSY) {
     // Claiming the device failed, but it's not busy!?!
     // Perhaps we have to explicitly set its configuration and try again...
