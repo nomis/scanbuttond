@@ -36,6 +36,7 @@ install: scanbuttond backends/libepson.so.1.0 backends/libplustek.so.1.0 backend
 	ln -sf libmeta.so.1 $(DESTDIR)$(libdir)/libmeta.so
 	if [ ! -d /etc/scanbuttond ]; then mkdir /etc/scanbuttond; fi
 	if [ ! -f /etc/scanbuttond/buttonpressed.sh ]; then cp buttonpressed.sh /etc/scanbuttond; fi
+	if [ ! -f /etc/scanbuttond/initscanner.sh ]; then cp initscanner.sh /etc/scanbuttond; fi
 	if [ ! -f /etc/scanbuttond/meta.conf ]; then $(INSTALL) backends/meta.conf /etc/scanbuttond/meta.conf; fi
 
 .c.o:

@@ -27,7 +27,8 @@
 #include "backends/backend.h"
 
 // the button number and the SANE device name are passed to the script as arguments
-#define SCRIPT		"/etc/scanbuttond/buttonpressed.sh %d %s"
+#define BUTTONPRESSED_SCRIPT		"/etc/scanbuttond/buttonpressed.sh %d %s"
+#define INITSCANNER_SCRIPT		"/etc/scanbuttond/initscanner.sh"
 #define POLL_DELAY	333*1000	/* poll three times a second */
 #define RETRY_DELAY	2000*1000	/* if the device is currently not available,
 					   wait 2 seconds and try again */
@@ -55,6 +56,7 @@ void sighandler(int i) {
 
 // Executes an auxiliary program
 void execute(const char* program) {
+  if (!program) return;
   system(program);
 }
 
@@ -121,6 +123,7 @@ int main(int argc, char** argv) {
   
     if (devices == NULL) {
       syslog(LOG_INFO, "performing device rescan.");
+      execute(INITSCANNER_SCRIPT);
       scanbtnd_rescan();
       devices = scanbtnd_get_supported_devices();
     }
@@ -145,7 +148,7 @@ int main(int argc, char** argv) {
         syslog(LOG_INFO, "button %d has been pressed.", button);
         dev->lastbutton = button;
         char cmd[256];
-	sprintf(cmd, SCRIPT, button, scanbtnd_get_sane_device_descriptor(dev));
+	sprintf(cmd, BUTTONPRESSED_SCRIPT, button, scanbtnd_get_sane_device_descriptor(dev));
         execute(cmd);
       }
       if ((button == 0) && (dev->lastbutton > 0)) {
