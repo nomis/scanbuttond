@@ -150,8 +150,8 @@ void attach_scanner(scanner_device* scanner, backend_t* backend) {
 }
 
 
-void attach_scanners(scanner_device* scanners, backend_t* backend) {
-  scanner_device* dev = scanners;
+void attach_scanners(scanner_device* devices, backend_t* backend) {
+  scanner_device* dev = devices;
   int count = 0;
   while (dev != NULL) {
     if (count >= MAX_SCANNERS_PER_BACKEND) {

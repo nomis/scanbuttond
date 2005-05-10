@@ -126,15 +126,21 @@ int main(int argc, char** argv) {
       execute(INITSCANNER_SCRIPT);
       scanbtnd_rescan();
       devices = scanbtnd_get_supported_devices();
+      if (devices == NULL) {
+        syslog(LOG_INFO, "after rescan: no new devices found.");
+        usleep(RETRY_DELAY);
+        break;
+      }
     }
     
     dev = devices;    
     while (dev != NULL) {
       result = scanbtnd_open(dev);
       if (result != 0) {
+        syslog(LOG_WARN, "scanbtnd_open failed, error code: %d", result);
         if (result == -ENODEV) {
           // device has been disconnected, force re-scan
-          syslog(LOG_INFO, "device rescan will be performed...");
+          syslog(LOG_INFO, "scanbtnd_open returned -ENODEV, device rescan will be performed...");
           devices = NULL;
         }                  
         usleep(RETRY_DELAY);
