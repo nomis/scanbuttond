@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
     while (dev != NULL) {
       result = scanbtnd_open(dev);
       if (result != 0) {
-        syslog(LOG_WARN, "scanbtnd_open failed, error code: %d", result);
+        syslog(LOG_WARNING, "scanbtnd_open failed, error code: %d", result);
         if (result == -ENODEV) {
           // device has been disconnected, force re-scan
           syslog(LOG_INFO, "scanbtnd_open returned -ENODEV, device rescan will be performed...");
