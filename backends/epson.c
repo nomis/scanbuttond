@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <syslog.h>
 #include "scanbuttond.h"
 #include "interface/libusbi.h"
@@ -170,6 +171,11 @@ scanner_device* scanbtnd_get_supported_devices(void) {
 int scanbtnd_open(scanner_device* scanner) {  
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
+      // if devices have been added/removed, return -ENODEV to
+      // make scanbuttond update its device list
+      if (libusb_get_changed_device_count() != 0) {
+	return -ENODEV;
+      }            
       return libusb_open((usb_scanner*)scanner->internal_dev_ptr);
     break;
   }

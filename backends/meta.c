@@ -250,6 +250,7 @@ int scanbtnd_init(void) {
   meta_strip_newline(libdir);
   while (fgets(lib, MAX_CONFIG_LINE, f)) {
     meta_strip_newline(lib);
+    if (strlen(lib)==0) continue;
     backend = meta_load_backend(libdir, lib);
     if (backend != NULL) {
       meta_attach_backend(backend);

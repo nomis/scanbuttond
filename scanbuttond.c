@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
   
     if (devices == NULL) {
       //syslog(LOG_INFO, "performing device rescan.");
-      execute(INITSCANNER_SCRIPT);
+      //execute(INITSCANNER_SCRIPT);
       scanbtnd_rescan();
       devices = scanbtnd_get_supported_devices();
       if (devices == NULL) {
@@ -134,6 +134,7 @@ int main(int argc, char** argv) {
         usleep(RETRY_DELAY);
         continue;
       }
+      execute(INITSCANNER_SCRIPT);
     }
     
     dev = devices;    
