@@ -39,6 +39,8 @@ struct usb_scanner {
 
 int libusb_init(void);
 
+int libusb_get_changed_device_count(void);
+
 void libusb_rescan(void);
 
 usb_scanner* libusb_get_devices(void);

@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <dlfcn.h>
+#include <errno.h>
+#include "interface/libusbi.h"
 #include "scanbuttond.h"
 #include "meta.h"
 
@@ -31,11 +33,11 @@
 static char* backend_name = "Dynamic Module Loader";
 static char* config_file = "/etc/scanbuttond/meta.conf";
 
-scanner_device* scanners = NULL;
-backend_t* backends = NULL;
+scanner_device* meta_scanners = NULL;
+backend_t* meta_backends = NULL;
 
 
-backend_t* load_backend(const char* path, const char* name) {
+backend_t* meta_load_backend(const char* path, const char* name) {
   const char* prefix = "lib";
   const char* suffix = ".so";
   char* error;
@@ -45,7 +47,7 @@ backend_t* load_backend(const char* path, const char* name) {
   strcat(libpath, prefix);
   strcat(libpath, name);
   strcat(libpath, suffix);
-  void* dll_handle = dlopen(libpath, RTLD_LAZY);
+  void* dll_handle = dlopen(libpath, RTLD_LAZY|RTLD_LOCAL);
   if (!dll_handle) {
     syslog(LOG_ERR, "meta-backend: failed to load \"%s\". Error message: \"%s\"",
       libpath, dlerror());
@@ -124,7 +126,7 @@ backend_t* load_backend(const char* path, const char* name) {
 }
 
 
-void unload_backend(backend_t* backend) {
+void meta_unload_backend(backend_t* backend) {
   dlclose(backend->handle);
   free(backend);
 }
@@ -135,7 +137,7 @@ char* scanbtnd_get_backend_name(void) {
 }
 
 
-void attach_scanner(scanner_device* scanner, backend_t* backend) {
+void meta_attach_scanner(scanner_device* scanner, backend_t* backend) {
   scanner_device* dev = (scanner_device*)malloc(sizeof(scanner_device));
   dev->vendor = scanner->vendor;
   dev->product = scanner->product;
@@ -144,13 +146,13 @@ void attach_scanner(scanner_device* scanner, backend_t* backend) {
   dev->sane_device = scanner->sane_device;
   dev->meta_info = (void*)backend;
   dev->lastbutton = 0;
-  dev->next = scanners;
-  scanners = dev;
+  dev->next = meta_scanners;
+  meta_scanners = dev;
   syslog(LOG_INFO, "meta-backend: attached scanner \"%s %s\"", scanner->vendor, scanner->product);
 }
 
 
-void attach_scanners(scanner_device* devices, backend_t* backend) {
+void meta_attach_scanners(scanner_device* devices, backend_t* backend) {
   scanner_device* dev = devices;
   int count = 0;
   while (dev != NULL) {
@@ -160,65 +162,67 @@ void attach_scanners(scanner_device* devices, backend_t* backend) {
       return;
     }
     //syslog(LOG_INFO, "meta-backend: attaching scanner \"%s %s\"", dev->vendor, dev->product);
-    attach_scanner(dev, backend);
+    meta_attach_scanner(dev, backend);
     dev = dev->next;
     count++;
   }
 }
 
 
-void detach_scanner(scanner_device* scanner) {
+void meta_detach_scanner(scanner_device* scanner) {
+  syslog(LOG_INFO, "meta-backend: detaching scanner: \"%s %s\"", scanner->vendor, scanner->product);
   free(scanner);
 }
 
 
-void detach_scanners(void) {
+void meta_detach_scanners(void) {
+  //syslog(LOG_INFO, "meta-backend: detaching scanners");
   scanner_device* next;
-  while (scanners != NULL) {
-    next = scanners->next;    
-    detach_scanner(scanners);
-    scanners = next;
+  while (meta_scanners != NULL) {
+    next = meta_scanners->next;    
+    meta_detach_scanner(meta_scanners);
+    meta_scanners = next;
   }
 }
 
 
-int attach_backend(backend_t* backend) {  
+int meta_attach_backend(backend_t* backend) {  
   // don't load another meta backend
   if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name())==0) {
     syslog(LOG_INFO, "meta-backend: refusing to load another meta backend!");
     return -1;
   }
   syslog(LOG_INFO, "meta-backend: attaching backend: %s", backend->scanbtnd_get_backend_name());
-  backend->next = backends;
-  backends = backend;  
+  backend->next = meta_backends;
+  meta_backends = backend;  
   backend->scanbtnd_init();  
-  attach_scanners(backend->scanbtnd_get_supported_devices(), backend);
+  meta_attach_scanners(backend->scanbtnd_get_supported_devices(), backend);
   return 0;
 }
 
 
-void detach_backend(backend_t* backend) {
+void meta_detach_backend(backend_t* backend) {
   backend->scanbtnd_exit();
-  unload_backend(backend);
+  meta_unload_backend(backend);
 }
 
 		
-void detach_backends(void) {
+void meta_detach_backends(void) {
   backend_t* next;
-  while (backends != NULL) {
-    next = backends->next;    
-    detach_backend(backends);
-    backends = next;
+  while (meta_backends != NULL) {
+    next = meta_backends->next;    
+    meta_detach_backend(meta_backends);
+    meta_backends = next;
   }
 }
 
 
-backend_t* lookup_backend(scanner_device* scanner) {
+backend_t* meta_lookup_backend(scanner_device* scanner) {
   return (backend_t*)scanner->meta_info;
 }
 
 
-void strip_newline(char* str) {
+void meta_strip_newline(char* str) {
   int len = strlen(str);
   if (len == 0) return;
   if (str[len-1] != '\n') return;
@@ -227,8 +231,11 @@ void strip_newline(char* str) {
 
 
 int scanbtnd_init(void) {
-  scanners = NULL;
-  backends = NULL;
+  meta_scanners = NULL;
+  meta_backends = NULL;
+  
+  syslog(LOG_INFO, "meta-backend: init");
+  libusb_init();
   
   // read config file
   char libdir[MAX_CONFIG_LINE];
@@ -240,12 +247,12 @@ int scanbtnd_init(void) {
     return -1;
   }
   fgets(libdir, MAX_CONFIG_LINE, f);
-  strip_newline(libdir);
+  meta_strip_newline(libdir);
   while (fgets(lib, MAX_CONFIG_LINE, f)) {
-    strip_newline(lib);
-    backend = load_backend(libdir, lib);
+    meta_strip_newline(lib);
+    backend = meta_load_backend(libdir, lib);
     if (backend != NULL) {
-      attach_backend(backend);
+      meta_attach_backend(backend);
     }
   }
   fclose(f);
@@ -257,56 +264,63 @@ int scanbtnd_init(void) {
 int scanbtnd_rescan(void) {
   backend_t* backend;
   
-  detach_scanners();
-  scanners = NULL;
+  meta_detach_scanners();
+  meta_scanners = NULL;
   
-  backend = backends;
+  backend = meta_backends;
   while (backend != NULL) {
     backend->scanbtnd_rescan();
-    attach_scanners(backend->scanbtnd_get_supported_devices(), backend);  
+    meta_attach_scanners(backend->scanbtnd_get_supported_devices(), backend); 
     backend = backend->next;
   }
-  
+    
   return 0;
 }
 
 
 scanner_device* scanbtnd_get_supported_devices(void) {
-  return scanners;
+  return meta_scanners;
 }
 
 
 int scanbtnd_open(scanner_device* scanner) {  
-  backend_t* backend = lookup_backend(scanner);
+  // if devices have been added/removed, return -ENODEV to
+  // make scanbuttond update its device list
+  if (libusb_get_changed_device_count() != 0) {
+    return -ENODEV;
+  }
+  backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_open(scanner);
 }
 
 
 int scanbtnd_close(scanner_device* scanner) {
-  backend_t* backend = lookup_backend(scanner);
+  backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_close(scanner);
 }
 
 
 int scanbtnd_get_button(scanner_device* scanner) {
-  backend_t* backend = lookup_backend(scanner);
+  backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return 0;
   return backend->scanbtnd_get_button(scanner);
 }
 
 
 char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner) {
-  backend_t* backend = lookup_backend(scanner);
+  backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return NULL;
   return backend->scanbtnd_get_sane_device_descriptor(scanner);
 }
 
 
 int scanbtnd_exit(void) {
-  detach_scanners();
-  detach_backends();
+  syslog(LOG_INFO, "meta-backend: exit");
+  meta_detach_scanners();
+  meta_detach_backends();
+  libusb_exit();
   return 0;
 }
 

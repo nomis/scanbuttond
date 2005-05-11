@@ -18,7 +18,7 @@ INSTALL = /usr/bin/install -c
 REMOVE = rm -f
 DISTFILES = Makefile scanbuttond.c
 
-all: scanbuttond backends/libmeta.so.1.0 backends/libepson.so.1.0 backends/libplustek.so.1.0 backends/libsnapscan.so.1.0 backends/libniash.so.1.0
+all: scanbuttond backends/libmeta.so.1.0 backends/libepson.so.1.0 backends/libplustek.so.1.0 backends/libsnapscan.so.1.0 backends/libniash.so.1.0 backends/libdummy.so.1.0
 
 install: scanbuttond backends/libepson.so.1.0 backends/libplustek.so.1.0 backends/libsnapscan.so.1.0 backends/libniash.so.1.0 backends/libmeta.so.1.0
 	$(INSTALL) scanbuttond $(DESTDIR)$(bindir)/scanbuttond
@@ -28,12 +28,14 @@ install: scanbuttond backends/libepson.so.1.0 backends/libplustek.so.1.0 backend
 	$(INSTALL) backends/libsnapscan.so.1.0 $(DESTDIR)$(libdir)/libsnapscan.so.1.0
 	$(INSTALL) backends/libniash.so.1.0 $(DESTDIR)$(libdir)/libniash.so.1.0
 	$(INSTALL) backends/libmeta.so.1.0 $(DESTDIR)$(libdir)/libmeta.so.1.0
+	$(INSTALL) backends/libdummy.so.1.0 $(DESTDIR)$(libdir)/libdummy.so.1.0
 	/sbin/ldconfig $(DESTDIR)$(libdir)
 	ln -sf libepson.so.1 $(DESTDIR)$(libdir)/libepson.so
 	ln -sf libplustek.so.1 $(DESTDIR)$(libdir)/libplustek.so
 	ln -sf libsnapscan.so.1 $(DESTDIR)$(libdir)/libsnapscan.so
 	ln -sf libniash.so.1 $(DESTDIR)$(libdir)/libniash.so
 	ln -sf libmeta.so.1 $(DESTDIR)$(libdir)/libmeta.so
+	ln -sf libdummy.so.1 $(DESTDIR)$(libdir)/libdummy.so
 	if [ ! -d /etc/scanbuttond ]; then mkdir /etc/scanbuttond; fi
 	if [ ! -f /etc/scanbuttond/buttonpressed.sh ]; then cp buttonpressed.sh /etc/scanbuttond; fi
 	if [ ! -f /etc/scanbuttond/initscanner.sh ]; then cp initscanner.sh /etc/scanbuttond; fi
@@ -69,9 +71,15 @@ backends/libniash.so.1.0: interface/libusbi.o backends/niash.c backends/niash.h 
 	/sbin/ldconfig -n ./backends
 	ln -sf libniash.so.1 backends/libniash.so
 
-backends/libmeta.so.1.0: backends/meta.c backends/meta.h backends/backend.h
+backends/libdummy.so.1.0: backends/dummy.c backends/dummy.h backends/backend.h
+	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) backends/dummy.c -o backends/dummy.o
+	$(CC) -rdynamic -shared -Wl,-soname,libdummy.so.1 -o backends/libdummy.so.1.0 backends/dummy.o -ldl
+	/sbin/ldconfig -n ./backends
+	ln -sf libdummy.so.1 backends/libdummy.so
+
+backends/libmeta.so.1.0: interface/libusbi.o backends/meta.c backends/meta.h backends/backend.h
 	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) backends/meta.c -o backends/meta.o
-	$(CC) -rdynamic -shared -Wl,-soname,libmeta.so.1 -o backends/libmeta.so.1.0 backends/meta.o -ldl
+	$(CC) -rdynamic -shared -Wl,-soname,libmeta.so.1 -o backends/libmeta.so.1.0 backends/meta.o interface/libusbi.o -ldl -lusb
 	/sbin/ldconfig -n ./backends
 	ln -sf libmeta.so.1 backends/libmeta.so
 
@@ -85,11 +93,13 @@ clean:
 	$(REMOVE) backends/plustek.o
 	$(REMOVE) backends/snapscan.o
 	$(REMOVE) backends/niash.o
+	$(REMOVE) backends/dummy.o
 	$(REMOVE) backends/meta.o
 	$(REMOVE) backends/libepson.so*
 	$(REMOVE) backends/libplustek.so*
 	$(REMOVE) backends/libsnapscan.so*
 	$(REMOVE) backends/libniash.so*
+	$(REMOVE) backends/libdummy.so*
 	$(REMOVE) backends/libmeta.so*
 	$(REMOVE) interface/libusbi.o
 

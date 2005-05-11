@@ -186,7 +186,13 @@ void libusb_rescan(void) {
     bus = bus->next;
   }
 }
-  
+
+
+int libusb_get_changed_device_count(void) {
+  usb_find_busses();
+  return usb_find_devices();
+}  
+
 
 usb_scanner* libusb_get_devices(void) {
   return usb_devices;
@@ -195,15 +201,7 @@ usb_scanner* libusb_get_devices(void) {
 
 int libusb_open(usb_scanner* scanner) {
   int result;
-  
-  // if usb busses or devices have been added or removed, we return
-  // an error to make scanbuttond update its device list
-  usb_find_busses();
-  if (usb_find_devices() != 0) {
-    syslog(LOG_INFO, "usb devices have been added/removed. forcing update of device list...");
-    return -ENODEV;
-  }
-  
+    
   scanner->handle = usb_open(scanner->device);
   if (scanner->handle == NULL) {
     syslog(LOG_INFO, "usb_open failed!");

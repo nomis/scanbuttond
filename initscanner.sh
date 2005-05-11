@@ -7,5 +7,5 @@
 # the apropriate command here.
 
 # Example:
-# scanimage -L
+# scanimage -n
 

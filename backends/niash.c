@@ -46,12 +46,12 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 };
 
 
-scanner_device* detected_scanners = NULL;
+scanner_device* niash_scanners = NULL;
 
 
 // returns -1 if the scanner is unsupported, or the index of the
 // corresponding vendor-product pair in the supported_usb_devices array.
-int match_libusb_scanner(usb_scanner* scanner) {
+int niash_match_libusb_scanner(usb_scanner* scanner) {
   int index;
   for (index = 0; index < NUM_SUPPORTED_USB_DEVICES; index++) {
     if (supported_usb_devices[index][0] == scanner->vendorID &&
@@ -63,10 +63,11 @@ int match_libusb_scanner(usb_scanner* scanner) {
   return index;
 }
 
+
 // TODO: check if the descriptor matches the SANE device name!
-void attach_libusb_scanner(usb_scanner* scanner) {
+void niash_attach_libusb_scanner(usb_scanner* scanner) {
   const char* descriptor_prefix = "niash:libusb:";
-  int index = match_libusb_scanner(scanner);
+  int index = niash_match_libusb_scanner(scanner);
   if (index < 0) return; // unsupported
   scanner_device* dev = (scanner_device*)malloc(sizeof(scanner_device));
   dev->vendor = usb_device_descriptions[index][0];
@@ -77,65 +78,69 @@ void attach_libusb_scanner(usb_scanner* scanner) {
   dev->sane_device = (char*)malloc(strlen(scanner->location) + strlen(descriptor_prefix) + 1);
   strcpy(dev->sane_device, descriptor_prefix);
   strcat(dev->sane_device, scanner->location);  
-  dev->next = detected_scanners;
-  detected_scanners = dev;
+  dev->next = niash_scanners;
+  niash_scanners = dev;
 }
 
 
-void detach_scanners(void) {
+void niash_detach_scanners(void) {
   scanner_device* next;
-  while (detected_scanners != NULL) {
-    next = detected_scanners->next;
-    free(detected_scanners->sane_device);
-    free(detected_scanners);
-    detected_scanners = next;
+  while (niash_scanners != NULL) {
+    next = niash_scanners->next;
+    free(niash_scanners->sane_device);
+    free(niash_scanners);
+    niash_scanners = next;
   }
 }
 
 
-void scanbtnd_scan_devices(usb_scanner* scanner) {
+void niash_scan_devices(usb_scanner* scanner) {
   int index;
   while (scanner != NULL) {
-    index = match_libusb_scanner(scanner);
-    if (index >= 0) attach_libusb_scanner(scanner);
+    index = niash_match_libusb_scanner(scanner);
+    if (index >= 0) niash_attach_libusb_scanner(scanner);
     scanner = scanner->next;
   }
 }
 
 
-int scanbtnd_init_libusb(void) {
+int niash_init_libusb(void) {
   usb_scanner* scanner;
   
   libusb_init();
   scanner = libusb_get_devices();
-  scanbtnd_scan_devices(scanner);
+  niash_scan_devices(scanner);
   return 0;
 }
+
 
 char* scanbtnd_get_backend_name(void) {
   return backend_name;
 }
 
+
 int scanbtnd_init(void) {
-  detected_scanners = NULL;
-  return scanbtnd_init_libusb();
+  niash_scanners = NULL;
+
+  syslog(LOG_INFO, "niash-backend: init");
+  return niash_init_libusb();
 }
 
 
 int scanbtnd_rescan(void) {
   usb_scanner* scanner;
 
-  detach_scanners();
-  detected_scanners = NULL;
+  niash_detach_scanners();
+  niash_scanners = NULL;
   libusb_rescan();
   scanner = libusb_get_devices();
-  scanbtnd_scan_devices(scanner);
+  niash_scan_devices(scanner);
   return 0;
 }
 
 
 scanner_device* scanbtnd_get_supported_devices(void) {
-  return detected_scanners;
+  return niash_scanners;
 }
 
 
@@ -218,7 +223,8 @@ char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner) {
 
 
 int scanbtnd_exit(void) {
-  detach_scanners();
+  syslog(LOG_INFO, "niash-backend: exit");
+  niash_detach_scanners();
   libusb_exit();
   return 0;
 }

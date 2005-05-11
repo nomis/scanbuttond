@@ -47,6 +47,7 @@ char* scanbtnd_get_connection_name(int connection) {
 // Ensures a graceful exit on SIGHUP/SIGTERM/SIGINT/SIGSEGV
 void sighandler(int i) {
   killed = 1;
+  syslog(LOG_INFO, "received signal %d", i);
   scanbtnd_exit();
   syslog(LOG_INFO, "quit");
   closelog();
@@ -151,7 +152,7 @@ int main(int argc, char** argv) {
       
       button = scanbtnd_get_button(dev);
       scanbtnd_close(dev);
-       
+        
       if ((button > 0) && (button != dev->lastbutton)) { 
         syslog(LOG_INFO, "button %d has been pressed.", button);
         dev->lastbutton = button;
