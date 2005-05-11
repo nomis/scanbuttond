@@ -16,6 +16,7 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
@@ -76,11 +77,43 @@ void list_devices(scanner_device* devices) {
 int main(int argc, char** argv) {
   int button;
   int result;
-  pid_t pid;
+  pid_t pid, sid;
   scanner_device* dev;
+
+  // fork to background
+  pid = fork();
+  if (pid < 0) { 
+    printf("Can't fork!\n");
+    exit(1);
+  } else if (pid > 0) {
+    exit(0);
+  } 
+  
+  // change the file mode mask
+  umask(0); 
  
   openlog(NULL, 0, LOG_DAEMON);
   
+  // create a new SID for the child process
+  sid = setsid();
+  if (sid < 0) {
+    syslog(LOG_ERR, "Could not create a new SID! Terminating.");
+    exit(1);
+  }
+
+  // Change the current working directory
+  if ((chdir("/")) < 0) {
+    syslog(LOG_WARNING, "Could not chdir to /. Hmmm, strange... "\
+      "Trying to continue.");
+    exit(EXIT_FAILURE);
+  }
+  
+  // close standard file descriptors
+  close(STDIN_FILENO);
+  close(STDOUT_FILENO);
+  close(STDERR_FILENO);
+  
+  // setup the environment
   char* oldpath = getenv("PATH");
   char* dir = dirname(argv[0]);
   path = (char*)malloc(strlen(oldpath) + strlen(dir) + 1);
@@ -90,14 +123,7 @@ int main(int argc, char** argv) {
   setenv("PATH", path, 1);
   free(path);
   
-  pid = fork();
-  if (pid < 0) { 
-    printf("Can't fork!\n");
-    exit(1);
-  } else if (pid != 0) {
-    sleep(1);
-    return 0;
-  }  
+  // prepare daemon operation
   
   execute(INITSCANNER_SCRIPT);
   
@@ -106,10 +132,8 @@ int main(int argc, char** argv) {
   scanner_device* devices = scanbtnd_get_supported_devices();
   
   if (devices == NULL) {
-    scanbtnd_exit();
-    closelog();
-    printf("No scanner found.\n");
-    return 1;
+    syslog(LOG_WARNING, "no known scanner found yet, " \
+    	"waiting for device to be attached");
   }
   
   list_devices(devices);
@@ -174,7 +198,7 @@ int main(int argc, char** argv) {
   
   syslog(LOG_INFO, "exited main loop"); 
       
-  return 0;
+  exit(0);
 
 }
 
