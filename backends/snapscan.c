@@ -33,7 +33,7 @@ static char* backend_name = "Snapscan USB (experimental)";
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ 0x04b8, 0x0121 },	// Epson Perfection 2480
-	{ 0x04b8, 0x011f }	// Epson Perfection 1670 (!!!TESTING!!!)
+	{ 0x04b8, 0x011f }	// Epson Perfection 1670
 };
 
 // TODO: check if this backend really works on the Epson 2580 too...
