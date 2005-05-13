@@ -20,9 +20,6 @@
 #ifndef SCANBUTTOND_H_INCLUDED
 #define SCANBUTTOND_H_INCLUDED
 
-// uncomment to enable lots of debug statements...
-// #define DEBUG
-
 // connection types
 #define CONNECTIONS_COUNT	2
 #define CONNECTION_NONE		0

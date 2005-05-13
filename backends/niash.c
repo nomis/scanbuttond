@@ -27,7 +27,7 @@
 #include "interface/libusbi.h"
 #include "backends/niash.h"
 
-static char* backend_name = "Niash USB (experimental)";
+static char* backend_name = "Niash USB";
 
 #define NUM_SUPPORTED_USB_DEVICES 4
 

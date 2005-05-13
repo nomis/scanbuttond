@@ -161,7 +161,6 @@ void meta_attach_scanners(scanner_device* devices, backend_t* backend) {
         dev->vendor, dev->product);
       return;
     }
-    //syslog(LOG_INFO, "meta-backend: attaching scanner \"%s %s\"", dev->vendor, dev->product);
     meta_attach_scanner(dev, backend);
     dev = dev->next;
     count++;
@@ -176,7 +175,6 @@ void meta_detach_scanner(scanner_device* scanner) {
 
 
 void meta_detach_scanners(void) {
-  //syslog(LOG_INFO, "meta-backend: detaching scanners");
   scanner_device* next;
   while (meta_scanners != NULL) {
     next = meta_scanners->next;    

@@ -27,7 +27,7 @@
 #include "interface/libusbi.h"
 #include "backends/plustek.h"
 
-static char* backend_name = "Plustek USB (experimental)";
+static char* backend_name = "Plustek USB";
 
 #define NUM_SUPPORTED_USB_DEVICES 2
 

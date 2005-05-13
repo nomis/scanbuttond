@@ -27,7 +27,7 @@
 #include "interface/libusbi.h"
 #include "backends/snapscan.h"
 
-static char* backend_name = "Snapscan USB (experimental)";
+static char* backend_name = "Snapscan USB";
 
 #define NUM_SUPPORTED_USB_DEVICES 2
 

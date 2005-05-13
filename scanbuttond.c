@@ -45,6 +45,7 @@ char* scanbtnd_get_connection_name(int connection) {
   return connection_names[connection];
 }
 
+
 // Ensures a graceful exit on SIGHUP/SIGTERM/SIGINT/SIGSEGV
 void sighandler(int i) {
   killed = 1;
@@ -80,7 +81,7 @@ int main(int argc, char** argv) {
   pid_t pid, sid;
   scanner_device* dev;
 
-  // fork to background
+  // daemonize
   pid = fork();
   if (pid < 0) { 
     printf("Can't fork!\n");
@@ -94,7 +95,7 @@ int main(int argc, char** argv) {
  
   openlog(NULL, 0, LOG_DAEMON);
   
-  // create a new SID for the child process
+  // create a new session for the child process
   sid = setsid();
   if (sid < 0) {
     syslog(LOG_ERR, "Could not create a new SID! Terminating.");
@@ -125,7 +126,9 @@ int main(int argc, char** argv) {
   
   // prepare daemon operation
   
+  syslog(LOG_DEBUG, "running scanner initialization script...");
   execute(INITSCANNER_SCRIPT);
+  syslog(LOG_DEBUG, "initialization script executed.");
   
   scanbtnd_init();
   
@@ -149,16 +152,17 @@ int main(int argc, char** argv) {
   while (killed == 0) {
   
     if (devices == NULL) {
-      //syslog(LOG_INFO, "performing device rescan.");
-      //execute(INITSCANNER_SCRIPT);
+      syslog(LOG_DEBUG, "rescanning devices...");
       scanbtnd_rescan();
       devices = scanbtnd_get_supported_devices();
       if (devices == NULL) {
-        //syslog(LOG_INFO, "after rescan: no new devices found.");
+        syslog(LOG_DEBUG, "no supported devices found. rescanning in a few seconds...");
         usleep(RETRY_DELAY);
         continue;
       }
+      syslog(LOG_DEBUG, "found supported devices. running scanner initialization script...");
       execute(INITSCANNER_SCRIPT);
+      syslog(LOG_DEBUG, "initialization script executed.");
     }
     
     dev = devices;    
