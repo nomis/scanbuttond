@@ -1,1 +1,21 @@
-Bernhard Stiftner <root84@users.sourceforge.net>
+Developers
+----------
+
+* Bernhard Stiftner <root84@users.sourceforge.net>
+  (Main author)
+
+* Dirk Wriedt
+  (Niash backend)
+
+
+Contributors
+------------
+
+* Hans Verkuil
+  (plustek backend)
+
+* James Gilliland
+  (Epson CX3200 support/testing)
+
+* "tsuet"
+  (testing)
