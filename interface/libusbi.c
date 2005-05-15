@@ -226,7 +226,7 @@ int libusb_open(usb_scanner* scanner) {
       usb_close(scanner->handle);
       return -EBUSY;
     default:
-      syslog(LOG_WARN, "usb_claim_interface returned something strange (%d)!!! " +
+      syslog(LOG_WARNING, "usb_claim_interface returned something strange (%d)!!! " \
         "Please contact me (mailto:root84@users.sourceforge.net) and include this message!", result);
       usb_close(scanner->handle);
       return -ENODEV;
