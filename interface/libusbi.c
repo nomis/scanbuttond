@@ -208,33 +208,29 @@ int libusb_open(usb_scanner* scanner) {
     return -ENODEV;
   }
   
+  // Calling usb_set_configuration should not be necessary. It is even considered harmful, since
+  // it disturbs other processes which are currently communicating with the scanner!
+  // usb_set_configuration(scanner->handle,
+  //   usb_device(scanner->handle)->config[0].bConfigurationValue);
+   
   result = usb_claim_interface(scanner->handle, scanner->interface);
-  //syslog(LOG_INFO, "usb_claim_interface returned %d", result);
-  if (result != 0 && result != -EBUSY) {
-    // Claiming the device failed, but it's not busy!?!
-    // Perhaps we have to explicitly set its configuration and try again...
-    syslog(LOG_INFO, "claiming the device failed, but it's not busy. Trying to set configuration.");
-    if (usb_set_configuration(scanner->handle, 
-        usb_device(scanner->handle)->config[0].bConfigurationValue) != 0) {
-      syslog(LOG_INFO, "usb_set_configuration failed!");
+  switch (result) {
+    case 0:
+      return 0;
+    case -ENOMEM:
+      syslog(LOG_ERR, "usb_claim_interface returned -ENOMEM!!! Sleeping for retry...");
       usb_close(scanner->handle);
       return -ENODEV;
-    }
-    result = usb_claim_interface(scanner->handle, scanner->interface);
+    case -EBUSY:
+      syslog(LOG_INFO, "usb_claim_interface return -EBUSY. Retrying...");
+      usb_close(scanner->handle);
+      return -EBUSY;
+    default:
+      syslog(LOG_WARN, "usb_claim_interface returned something strange (%d)!!! " +
+        "Please contact me (mailto:root84@users.sourceforge.net) and include this message!", result);
+      usb_close(scanner->handle);
+      return -ENODEV;
   }
-  if (result != 0) {
-    if (result == -EBUSY) 
-    {
-     syslog(LOG_INFO, "usb_claim_interface failed. the device is busy.");
-    } else
-    { 
-     syslog(LOG_INFO, "usb_claim_interface failed. the device is not? busy.");
-    }
-    usb_close(scanner->handle);
-    return -EBUSY;
-  }
-  
-  return 0;
 }
 
 
