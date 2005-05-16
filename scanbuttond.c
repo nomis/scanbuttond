@@ -106,7 +106,6 @@ int main(int argc, char** argv) {
   if ((chdir("/")) < 0) {
     syslog(LOG_WARNING, "Could not chdir to /. Hmmm, strange... "\
       "Trying to continue.");
-    exit(EXIT_FAILURE);
   }
   
   // close standard file descriptors
@@ -130,7 +129,10 @@ int main(int argc, char** argv) {
   execute(INITSCANNER_SCRIPT);
   syslog(LOG_DEBUG, "initialization script executed.");
   
-  scanbtnd_init();
+  if (scanbtnd_init() != 0) {
+    syslog(LOG_ERR, "Error initializing backend. Terminating.");
+    exit(1);
+  }
   
   scanner_device* devices = scanbtnd_get_supported_devices();
   

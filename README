@@ -97,7 +97,7 @@ Using the epson backend and libusb connection:
 * Epson Perfection 1200U (expected to work)
 * Epson Perfection 1240 (expected to work)
 * Epson Perfection 1640 (expected to work)
-* Epson Perfection 1650 (expected to work)
+* Epson Perfection 1650 (working, tested)
 * Epson Perfection 1660 (expected to work)
 * Epson Perfection 2400 (working, tested)
 * Epson Perfection 2450 (expected to work)

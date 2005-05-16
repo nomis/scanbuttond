@@ -187,7 +187,7 @@ void meta_detach_scanners(void) {
 int meta_attach_backend(backend_t* backend) {  
   // don't load another meta backend
   if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name())==0) {
-    syslog(LOG_INFO, "meta-backend: refusing to load another meta backend!");
+    syslog(LOG_WARNING, "meta-backend: refusing to load another meta backend!");
     return -1;
   }
   syslog(LOG_INFO, "meta-backend: attaching backend: %s", backend->scanbtnd_get_backend_name());
@@ -241,7 +241,7 @@ int scanbtnd_init(void) {
   backend_t* backend;
   FILE* f = fopen(config_file, "r");
   if (f == NULL) {
-    syslog(LOG_INFO, "meta-backend: config file \"%s\" not found. exiting.", config_file);
+    syslog(LOG_ERR, "meta-backend: config file \"%s\" not found.", config_file);
     return -1;
   }
   fgets(libdir, MAX_CONFIG_LINE, f);

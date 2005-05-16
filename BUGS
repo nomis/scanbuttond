@@ -8,8 +8,8 @@ I would be glad if someone would volunteer to gather additional info about
 the scanner communication protocol and fix these backends. 
 
 
-Resolved Issues
----------------
+Open, but Resolvable Issues
+---------------------------
 
 * I got a few reports that scanbuttond is not initializing the scanner
 correctly in some cases. If scanbuttond seems to have troubles accessing the
@@ -26,6 +26,15 @@ can't use both at the same time! Scanbuttond only supports libusb, so it
 won't work when the scanner kernel module is loaded. In this case, I'd
 suggest to get rid of the kernel module and switching to libusb (or even
 better: get a 2.6.x kernel since there is no scanner kernel module anymore).
+
+* Note that scanbuttond won't work without installation! It expects scripts
+and configuration files to be installed in /etc/scanbuttond as well as
+the dynamically loadable backend modules to be present in
+/usr/local/lib/scanbuttond.
+
+
+Fixed Bugs
+----------
 
 * Disconnectiong USB scanners caused older versions of scanbuttond to
 crash (SIGSEGV). This problem should be fixed as of version 0.2.1.
