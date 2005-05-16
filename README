@@ -1,4 +1,4 @@
-Scanner Button Daemon (scanbuttond), Version 0.2.1
+Scanner Button Daemon (scanbuttond), Version 0.2.2
 ==================================================
 
 
@@ -50,17 +50,24 @@ This will install the following files:
 /usr/local/lib/scanbuttond/libplustek.so
 /usr/local/lib/scanbuttond/libplustek.so.1
 /usr/local/lib/scanbuttond/libplustek.so.1.0
+/usr/local/lib/scanbuttond/libsnapscan.so
+/usr/local/lib/scanbuttond/libsnapscan.so.1
+/usr/local/lib/scanbuttond/libsnapscan.so.1.0
+/usr/local/lib/scanbuttond/libniash.so
+/usr/local/lib/scanbuttond/libniash.so.1
+/usr/local/lib/scanbuttond/libniash.so.1.0
 /usr/local/lib/scanbuttond/libmeta.so
 /usr/local/lib/scanbuttond/libmeta.so.1
 /usr/local/lib/scanbuttond/libmeta.so.1.0
 /etc/scanbuttond/buttonpressed.sh
+/etc/scanbuttond/initscanner.sh
 /etc/scanbuttond/meta.conf
 
 
 Usage
 -----
 
-type
+If you just want to try out scanbuttond, type
 > scanbuttond
 
 If everyhing works, scanbuttond will fork() to background.
@@ -68,11 +75,14 @@ To see what scanbuttond is doing, you can have a look at your
 system log, for example /var/log/everything/current (for Gentoo
 Linux systems).
 
-Currently, there is no "proper" way to quit scanbuttond.
-Just kill it, for example by typing
+To terminate scanbuttond, type
 > killall scanbuttond
 That should do the job. Scanbuttond installs a signal handler
 which should ensure a clean shutdown even when it's killed.
+
+If you intend to use scanbuttond seriously, you would probably
+want to write a distribution-specific init-script for starting
+and stopping the daemon.
 
 
 Supported scanners
@@ -95,18 +105,19 @@ Using the epson backend and libusb connection:
 * Epson CX3200 (working, tested)
 
 Using the plustek backend and libusb connection:
-* Canon CanoScan N1220U (experimental)
-* Canon CanoScan D660U (experimental)
+* Canon CanoScan N1220U
+* Canon CanoScan D660U
 
 Using the snapscan backend and libusb connection
-* Epson Perfection 2480 (experimental, only in CVS version)
-* Epson Perfection 2580 (experimental, only in CVS version)
+* Epson Perfection 2480
+* Epson Perfection 2580
+* Epson Perfection 1670 (working, tested)
 
 Using the niash backend and libusb connection
-* Agfa Snapscan Touch (experimental, only in CVS version)
-* HP Scanjet 3300c (experimental, only in CVS version)
-* HP Scanjet 3400c (experimental, only in CVS version)
-* HP Scanjet 4300c (experimental, only in CVS version)
+* Agfa Snapscan Touch 
+* HP Scanjet 3300c 
+* HP Scanjet 3400c 
+* HP Scanjet 4300c 
 
 
 Note: the plustek backend is considered experimental, and I
@@ -125,6 +136,24 @@ By default, this shell script is installed as
 Please modify it to fit your purposes.
 
 
+Scanner initialization
+----------------------
+
+Note: this only applies to some scanners supported by the
+plustek, snapscan and niash backends. All scanners supported
+by the epson backend do not need special initialization.
+
+Some scanners require a special initialization procedure (firmware
+uploading, for example) before they can be used by scanbuttond.
+Since the scanbuttond backend modules cannot yet handle such 
+operations, the initialization has to be performed by external 
+programs, for example by "scanimage" which is part of SANE.
+Have a look at the script "/etc/scanbuttond/initscanner.sh". This
+script will be executed whenever a new device has to be initialized.
+In most cases, it should be sufficient to put something like
+"scanimage -n" into this script.
+
+
 How to contribute to this project
 ---------------------------------
 
@@ -134,7 +163,6 @@ You could help by ...
 
  * adding or enhancing a scanner backend
  * adding or enhancing a connection interface
- * implementing a proper shutdown mechanism
  * doing some extensive testing
  * sending patches
  * sending bug reports
@@ -142,39 +170,6 @@ You could help by ...
  * ...
  
 If you want to help, please send me an email (see below).
-
-
-Version History
----------------
-
-0.2.2, (not released yet)
-  * niash backend
-  * snapscan backend
-  * bugfixes in usb communication layer
-
-0.2.1, released Mar 14, 2005
-  * added plustek and meta backend
-  * added support for more scanners to the epson backend
-  * SIGSEGV bug fixed, scanner hotplugging seems to work now
-  * using /etc/scanbuttond as config file directory
-
-0.2, released Dec 31, 2004
-  * new, modular architecture
-  * support for multiple scanners
-  * several bugfixes
-  
-0.1, released Oct 17, 2004
-  * first public version
-
-
-Credits
--------
-
-* Hans Verkuil for writing the plustek backend
-* James Gilliland for Epson CX3200 support/testing
-* Dirk Wriedt for the niash backend and some general 
-  improvements and bugfixes
-* "tsuet" for extensive testing
 
 
 Contact
