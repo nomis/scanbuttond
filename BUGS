@@ -1,7 +1,11 @@
 Open Bugs
 ---------
 
-* None that I know of ;-)
+* Some backends report a button press multiple times. This only applies
+to those backends which were implemented using information from "sniffing"
+and/or reverse engineering, i.e. plustek, snapscan and niash. 
+I would be glad if someone would volunteer to gather additional info about 
+the scanner communication protocol and fix these backends. 
 
 
 Resolved Issues
