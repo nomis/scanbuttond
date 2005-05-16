@@ -1,0 +1,34 @@
+Open Bugs
+---------
+
+* None that I know of ;-)
+
+
+Resolved Issues
+---------------
+
+* I got a few reports that scanbuttond is not initializing the scanner
+correctly in some cases. If scanbuttond seems to have troubles accessing the
+hardware, please have a look at "/etc/scanbuttond/initscanner.sh".
+This is the scanner initialization script which will be executed before
+scanbuttond tries to talk to your scanner. Sometimes it is necessary to let
+a SANE program initialize the scanner before it can be accessed by
+scanbuttond. Usually, putting something like "scanimage -n" in the
+initscanner.sh script should solve the problem.
+
+* If you are still using Linux 2.4.x: Note that the scanner can be accessed
+by either the scanner kernel module or from userspace by libusb - but you
+can't use both at the same time! Scanbuttond only supports libusb, so it
+won't work when the scanner kernel module is loaded. In this case, I'd
+suggest to get rid of the kernel module and switching to libusb (or even
+better: get a 2.6.x kernel since there is no scanner kernel module anymore).
+
+* Disconnectiong USB scanners caused older versions of scanbuttond to
+crash (SIGSEGV). This problem should be fixed as of version 0.2.1.
+
+* Be careful when using USB 2.0 with the linux ehci-hcd module. There
+seems to be a memory leak which makes your computer run out of free RAM
+after running scanbuttond for several days. The only workaround known to me
+is not to load ehci-hcd and using USB 1.x (uhci-hcd or ohci-hcd) instead.
+Update: This problem seems to be fixed in Linux 2.6.10.
+
