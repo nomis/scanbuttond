@@ -58,7 +58,19 @@ void sighandler(int i) {
 
 
 // Executes an auxiliary program
-void execute(const char* program) {
+void execute_as_child(const char* program) {
+  if (!program) return;
+  int pid = fork();
+  if (pid == 0) {
+    system(program);
+    exit(EXIT_SUCCESS);
+  } else if (pid < 0) {
+    syslog(LOG_ERR, "fork() failed, cannot execute external program!");
+  }
+}
+
+
+void execute_and_wait(const char* program) {
   if (!program) return;
   system(program);
 }
@@ -126,7 +138,7 @@ int main(int argc, char** argv) {
   // prepare daemon operation
   
   syslog(LOG_DEBUG, "running scanner initialization script...");
-  execute(INITSCANNER_SCRIPT);
+  execute_and_wait(INITSCANNER_SCRIPT);
   syslog(LOG_DEBUG, "initialization script executed.");
   
   if (scanbtnd_init() != 0) {
@@ -163,7 +175,7 @@ int main(int argc, char** argv) {
         continue;
       }
       syslog(LOG_DEBUG, "found supported devices. running scanner initialization script...");
-      execute(INITSCANNER_SCRIPT);
+      execute_and_wait(INITSCANNER_SCRIPT);
       syslog(LOG_DEBUG, "initialization script executed.");
     }
     
@@ -189,7 +201,7 @@ int main(int argc, char** argv) {
         dev->lastbutton = button;
         char cmd[256];
 	sprintf(cmd, BUTTONPRESSED_SCRIPT, button, scanbtnd_get_sane_device_descriptor(dev));
-        execute(cmd);
+        execute_as_child(cmd);
       }
       if ((button == 0) && (dev->lastbutton > 0)) {
         syslog(LOG_INFO, "button %d has been released.", dev->lastbutton);
