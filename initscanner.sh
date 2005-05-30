@@ -8,4 +8,6 @@
 
 # Example:
 # scanimage -n
+# or
+# sane-find-scanners
 

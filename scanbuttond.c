@@ -159,6 +159,7 @@ int main(int argc, char** argv) {
   signal(SIGHUP, &sighandler);
   signal(SIGINT, &sighandler);
   signal(SIGSEGV, &sighandler);
+  signal(SIGCLD, SIG_IGN);
   
   syslog(LOG_INFO, "scanbuttond started");
 

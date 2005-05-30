@@ -7,6 +7,9 @@
 #        more scanners. In this case we can pass the device name to SANE programs 
 #        like scanimage.
 
+TMPFILE="/tmp/scan.tiff"
+LOCKFILE="/tmp/copy.lock"
+
 case $1 in
 	1)
 		echo "button 1 has been pressed on $2"
@@ -16,10 +19,17 @@ case $1 in
 		# ISO A4 paper size so that the scanned document matches the printer
 		# output as closely as possible.
 		#
+		# if [ -f $LOCKFILE ]; then
+		#   echo "Error: Another scanning operation is currently in progress"
+		#   exit
+		# fi
+		# touch $LOCKFILE
+		# rm -f $TMPFILE
 		# scanimage --device-name $2 --format tiff --mode Gray --quick-format A4 \
 		# --resolution 300 --sharpness 0 --brightness -3 \
-		# --gamma-correction "High contrast printing" > /tmp/scan.tiff
-		# tiff2ps -z -w 8.27 -h 11.69 /tmp/scan.tiff | lpr
+		# --gamma-correction "High contrast printing" > $TMPFILE
+		# tiff2ps -z -w 8.27 -h 11.69 $TMPFILE | lpr
+		# rm -f $LOCKFILE
 		#
 		;;
 	2)
