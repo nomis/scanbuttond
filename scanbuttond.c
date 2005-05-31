@@ -57,7 +57,7 @@ void sighandler(int i) {
 }
 
 
-// Executes an auxiliary program
+// Executes an external program as an independent child
 void execute_as_child(const char* program) {
   if (!program) return;
   int pid = fork();
@@ -70,6 +70,7 @@ void execute_as_child(const char* program) {
 }
 
 
+// Executes an external program and wait until it terminates
 void execute_and_wait(const char* program) {
   if (!program) return;
   system(program);
