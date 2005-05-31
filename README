@@ -88,7 +88,7 @@ and stopping the daemon.
 Supported scanners
 ------------------
 
-Using the epson backend and libusb connection:
+Supported by the epson backend using libusb connection:
 * Epson Expression 1600 (expected to work)
 * Epson Expression 1680 (expected to work)
 * Epson Perfection 610 (expected to work)
@@ -104,16 +104,16 @@ Using the epson backend and libusb connection:
 * Epson Perfection 3200 (expected to work)
 * Epson CX3200 (working, tested)
 
-Using the plustek backend and libusb connection:
+Supported by the plustek backend using libusb connection:
 * Canon CanoScan N1220U (expected to work)
 * Canon CanoScan D660U (expected to work)
 
-Using the snapscan backend and libusb connection
+Supported by the snapscan backend using libusb connection:
 * Epson Perfection 2480 (expected to work)
 * Epson Perfection 2580 (expected to work)
 * Epson Perfection 1670 (working, tested)
 
-Using the niash backend and libusb connection
+Supported by the niash backend using libusb connection:
 * Agfa Snapscan Touch (expected to work)
 * HP Scanjet 3300c (expected to work)
 * HP Scanjet 3400c (expected to work)
