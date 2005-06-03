@@ -28,9 +28,14 @@
 #define TIMEOUT	   	30 * 1000	/* 30 seconds */
 
 usb_scanner* usb_devices = NULL;
+int invocation_count = 0;
 
 
 int libusb_init(void) {
+  invocation_count++;
+  if (invocation_count != 1) return 0;
+  openlog(NULL, 0, LOG_DAEMON);
+  syslog(LOG_INFO, "initializing libusb wrapper");
   usb_init();
   libusb_rescan();
   return 0;
@@ -169,6 +174,8 @@ void libusb_detach_devices(void) {
 void libusb_rescan(void) {  
   struct usb_bus *bus;
   struct usb_device *device;
+  
+  syslog(LOG_INFO, "rescanning usb devices...");
 
   libusb_detach_devices();
     
@@ -218,11 +225,11 @@ int libusb_open(usb_scanner* scanner) {
     case 0:
       return 0;
     case -ENOMEM:
-      syslog(LOG_ERR, "usb_claim_interface returned -ENOMEM!!! Sleeping for retry...");
+      syslog(LOG_ERR, "usb_claim_interface returned -ENOMEM!!!");
       usb_close(scanner->handle);
       return -ENODEV;
     case -EBUSY:
-      syslog(LOG_INFO, "usb_claim_interface return -EBUSY. Retrying...");
+      syslog(LOG_INFO, "usb_claim_interface return -EBUSY.");
       usb_close(scanner->handle);
       return -EBUSY;
     default:
@@ -270,7 +277,11 @@ int libusb_control_msg(usb_scanner* scanner, int requesttype, int request, int v
 
 
 int libusb_exit(void) {
+  invocation_count--;
+  if (invocation_count != 0) return 0;
+  syslog(LOG_INFO, "shutting down libusb wrapper");
   libusb_detach_devices();
+  closelog();
   return 0;
 }
 

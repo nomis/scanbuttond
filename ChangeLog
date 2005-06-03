@@ -1,9 +1,11 @@
-0.2.2, released May 16, 2005
+0.2.2, (to be released soon)
 ----------------------------
   * added snapscan backend
   * added niash backend
   * support for scanner initialization script
   * lots of bugs fixed
+  * command line option support
+  * libusb wrapper moved into own dynamic library
 
 
 0.2.1, released Mar 14, 2005

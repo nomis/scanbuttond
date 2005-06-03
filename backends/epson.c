@@ -131,6 +131,7 @@ void epson_scan_devices(usb_scanner* scanner) {
 int epson_init_libusb(void) {
   usb_scanner* scanner;
   
+  syslog(LOG_INFO, "libusb_init");
   libusb_init();
   scanner = libusb_get_devices();
   epson_scan_devices(scanner);

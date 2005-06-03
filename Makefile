@@ -13,22 +13,24 @@ CC = gcc
 INCLUDES = -I. -I$(includedir)
 CFLAGS = -g -O2 -Wall -I$(includedir) -I.
 LD = ld
-LDFLAGS =  -L$(libdir) -lusb
+LDFLAGS =  -L$(libdir)
 INSTALL = /usr/bin/install -c
 REMOVE = rm -f
 DISTFILES = Makefile scanbuttond.c
 
-all: scanbuttond backends/libmeta.so.1.0 backends/libepson.so.1.0 backends/libplustek.so.1.0 backends/libsnapscan.so.1.0 backends/libniash.so.1.0
+all: scanbuttond backends/libmeta.so.1.0 backends/libepson.so.1.0 backends/libplustek.so.1.0 backends/libsnapscan.so.1.0 interface/libusbi.so.1.0 backends/libniash.so.1.0 interface/libusbi.so.1.0
 
 install: scanbuttond backends/libepson.so.1.0 backends/libplustek.so.1.0 backends/libsnapscan.so.1.0 backends/libniash.so.1.0 backends/libmeta.so.1.0
 	$(INSTALL) scanbuttond $(DESTDIR)$(bindir)/scanbuttond
 	mkdir -p $(libdir)
+	$(INSTALL) interface/libusbi.so.1.0 $(DESTDIR)$(libdir)/libusbi.so.1.0
 	$(INSTALL) backends/libepson.so.1.0 $(DESTDIR)$(libdir)/libepson.so.1.0
 	$(INSTALL) backends/libplustek.so.1.0 $(DESTDIR)$(libdir)/libplustek.so.1.0
 	$(INSTALL) backends/libsnapscan.so.1.0 $(DESTDIR)$(libdir)/libsnapscan.so.1.0
 	$(INSTALL) backends/libniash.so.1.0 $(DESTDIR)$(libdir)/libniash.so.1.0
 	$(INSTALL) backends/libmeta.so.1.0 $(DESTDIR)$(libdir)/libmeta.so.1.0
 	/sbin/ldconfig $(DESTDIR)$(libdir)
+	ln -sf libusbi.so.1 $(DESTDIR)$(libdir)/libusbi.so
 	ln -sf libepson.so.1 $(DESTDIR)$(libdir)/libepson.so
 	ln -sf libplustek.so.1 $(DESTDIR)$(libdir)/libplustek.so
 	ln -sf libsnapscan.so.1 $(DESTDIR)$(libdir)/libsnapscan.so
@@ -42,37 +44,39 @@ install: scanbuttond backends/libepson.so.1.0 backends/libplustek.so.1.0 backend
 .c.o:
 	$(CC) -c $(CFLAGS) $<
 
-interface/libusbi.o: interface/libusbi.c interface/libusbi.h
-	$(CC) -c -fPIC $(CFLAGS) interface/libusbi.c -o interface/libusbi.o
+interface/libusbi.so.1.0: interface/libusbi.h interface/libusbi.c
+	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) interface/libusbi.c -o interface/libusbi.o
+	$(CC) -rdynamic -shared -Wl,-soname,libusbi.so.1 -o interface/libusbi.so.1.0 interface/libusbi.o -lusb
+	/sbin/ldconfig -n ./interface
+	ln -sf libusbi.so.1 interface/libusbi.so
 
-backends/libepson.so.1.0: interface/libusbi.o backends/epson.c backends/epson.h backends/backend.h
+backends/libepson.so.1.0: interface/libusbi.so.1.0 backends/epson.c backends/epson.h backends/backend.h
 	$(CC) -c -fPIC $(CFLAGS) backends/epson.c -o backends/epson.o
-	$(CC) -rdynamic -shared -Wl,-soname,libepson.so.1 -o backends/libepson.so.1.0 backends/epson.o interface/libusbi.o -lusb
+	$(CC) -rdynamic -shared -L./interface -Wl,-soname,libepson.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libepson.so.1.0 backends/epson.o -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libepson.so.1 backends/libepson.so
 
-backends/libplustek.so.1.0: interface/libusbi.o backends/plustek.c backends/plustek.h backends/backend.h
+backends/libplustek.so.1.0: interface/libusbi.so.1.0 backends/plustek.c backends/plustek.h backends/backend.h
 	$(CC) -c -fPIC $(CFLAGS) backends/plustek.c -o backends/plustek.o
-	$(CC) -rdynamic -shared -Wl,-soname,libplustek.so.1 -o backends/libplustek.so.1.0 backends/plustek.o interface/libusbi.o -lusb
+	$(CC) -rdynamic -shared -L./interface -Wl,-soname,libplustek.so.1 -Wl,-rpath,./interface:$(libdir)  -o backends/libplustek.so.1.0 backends/plustek.o -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libplustek.so.1 backends/libplustek.so
 
-backends/libsnapscan.so.1.0: interface/libusbi.o backends/snapscan.c backends/snapscan.h backends/backend.h
+backends/libsnapscan.so.1.0: interface/libusbi.so.1.0 backends/snapscan.c backends/snapscan.h backends/backend.h
 	$(CC) -c -fPIC $(CFLAGS) backends/snapscan.c -o backends/snapscan.o
-	$(CC) -rdynamic -shared -Wl,-soname,libsnapscan.so.1 -o backends/libsnapscan.so.1.0 backends/snapscan.o interface/libusbi.o -lusb
+	$(CC) -rdynamic -shared -L./interface -Wl,-soname,libsnapscan.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libsnapscan.so.1.0 backends/snapscan.o -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libsnapscan.so.1 backends/libsnapscan.so
 
-backends/libniash.so.1.0: interface/libusbi.o backends/niash.c backends/niash.h backends/backend.h
+backends/libniash.so.1.0: interface/libusbi.so.1.0 backends/niash.c backends/niash.h backends/backend.h
 	$(CC) -c -fPIC $(CFLAGS) backends/niash.c -o backends/niash.o
-	$(CC) -rdynamic -shared -Wl,-soname,libniash.so.1 -o backends/libniash.so.1.0 backends/niash.o interface/libusbi.o -lusb
+	$(CC) -rdynamic -shared -L./interface -Wl,-soname,libniash.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libniash.so.1.0 backends/niash.o -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libniash.so.1 backends/libniash.so
 
-
-backends/libmeta.so.1.0: interface/libusbi.o backends/meta.c backends/meta.h backends/backend.h
+backends/libmeta.so.1.0: interface/libusbi.so.1.0 backends/meta.c backends/meta.h backends/backend.h
 	$(CC) $(CFLAGS) -c -fPIC $(CFLAGS) backends/meta.c -o backends/meta.o
-	$(CC) -rdynamic -shared -Wl,-soname,libmeta.so.1 -o backends/libmeta.so.1.0 backends/meta.o interface/libusbi.o -ldl -lusb
+	$(CC) -rdynamic -shared -L./interface -Wl,-soname,libmeta.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libmeta.so.1.0 backends/meta.o -ldl -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libmeta.so.1 backends/libmeta.so
 
@@ -93,4 +97,5 @@ clean:
 	$(REMOVE) backends/libniash.so*
 	$(REMOVE) backends/libmeta.so*
 	$(REMOVE) interface/libusbi.o
+	$(REMOVE) interface/libusbi.so.*
 

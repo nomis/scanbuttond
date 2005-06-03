@@ -47,7 +47,7 @@ backend_t* meta_load_backend(const char* path, const char* name) {
   strcat(libpath, prefix);
   strcat(libpath, name);
   strcat(libpath, suffix);
-  void* dll_handle = dlopen(libpath, RTLD_LAZY|RTLD_LOCAL);
+  void* dll_handle = dlopen(libpath, RTLD_LAZY|RTLD_GLOBAL);
   if (!dll_handle) {
     syslog(LOG_ERR, "meta-backend: failed to load \"%s\". Error message: \"%s\"",
       libpath, dlerror());
