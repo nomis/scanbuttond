@@ -131,7 +131,6 @@ void epson_scan_devices(usb_scanner* scanner) {
 int epson_init_libusb(void) {
   usb_scanner* scanner;
   
-  syslog(LOG_INFO, "libusb_init");
   libusb_init();
   scanner = libusb_get_devices();
   epson_scan_devices(scanner);
@@ -155,11 +154,13 @@ int scanbtnd_init(void) {
 int scanbtnd_rescan(void) {
   usb_scanner* scanner;
   
+  syslog(LOG_DEBUG, "epson-backend: rescanning");
   epson_detach_scanners();
   epson_scanners = NULL;
   libusb_rescan();
   scanner = libusb_get_devices();
   epson_scan_devices(scanner);
+  syslog(LOG_DEBUG, "epson-backend: rescan complete");
   return 0;
 }
 
@@ -170,6 +171,24 @@ scanner_device* scanbtnd_get_supported_devices(void) {
 
 
 int scanbtnd_open(scanner_device* scanner) {  
+  // TODO: remove debug code!
+  
+  syslog(LOG_DEBUG, "epson-backend: open %s", scanner->sane_device);
+  /*
+  int found = 0;
+  scanner_device *dev = epson_scanners;
+  while (dev != NULL) {
+    if (dev->internal_dev_ptr == scanner->internal_dev_ptr) {
+      found = 1;
+      break;
+    }
+    dev = dev->next;
+  }
+  if (found == 0) {
+    syslog(LOG_WARNING, "epson-backend: attempted to open stale device descriptor!!!");
+    return -1;
+  }
+  */
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
       // if devices have been added/removed, return -ENODEV to

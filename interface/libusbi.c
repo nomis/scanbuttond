@@ -34,7 +34,6 @@ int invocation_count = 0;
 int libusb_init(void) {
   invocation_count++;
   if (invocation_count != 1) return 0;
-  openlog(NULL, 0, LOG_DAEMON);
   syslog(LOG_INFO, "initializing libusb wrapper");
   usb_init();
   libusb_rescan();
@@ -175,7 +174,7 @@ void libusb_rescan(void) {
   struct usb_bus *bus;
   struct usb_device *device;
   
-  syslog(LOG_INFO, "rescanning usb devices...");
+  syslog(LOG_DEBUG, "rescanning usb devices...");
 
   libusb_detach_devices();
     
@@ -192,6 +191,9 @@ void libusb_rescan(void) {
     }
     bus = bus->next;
   }
+  
+  syslog(LOG_DEBUG, "rescan complete");
+  
 }
 
 
@@ -208,12 +210,19 @@ usb_scanner* libusb_get_devices(void) {
 
 int libusb_open(usb_scanner* scanner) {
   int result;
-    
+  
+  if (!scanner->device || libusb_get_changed_device_count() != 0)
+    return -ENODEV;
+  
+  syslog(LOG_DEBUG, "libusb_open entered");
+  
   scanner->handle = usb_open(scanner->device);
   if (scanner->handle == NULL) {
     syslog(LOG_INFO, "usb_open failed!");
     return -ENODEV;
   }
+  
+  syslog(LOG_DEBUG, "claiming interface...");
   
   // Calling usb_set_configuration should not be necessary. It is even considered harmful, since
   // it disturbs other processes which are currently communicating with the scanner!
@@ -223,6 +232,7 @@ int libusb_open(usb_scanner* scanner) {
   result = usb_claim_interface(scanner->handle, scanner->interface);
   switch (result) {
     case 0:
+      syslog(LOG_DEBUG, "usb_open completed");
       return 0;
     case -ENOMEM:
       syslog(LOG_ERR, "usb_claim_interface returned -ENOMEM!!!");
@@ -281,7 +291,6 @@ int libusb_exit(void) {
   if (invocation_count != 0) return 0;
   syslog(LOG_INFO, "shutting down libusb wrapper");
   libusb_detach_devices();
-  closelog();
   return 0;
 }
 

@@ -17,6 +17,7 @@
 
 
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
@@ -26,9 +27,10 @@
 #include <syslog.h>
 #include <errno.h>
 #include <getopt.h>
-#include "backends/backend.h"
+#include "lib/loader.h"
 
 #define VERSION				"0.2.2-pre"
+#define DEF_BACKEND_FILENAME		"/usr/local/lib/scanbuttond/libmeta.so"
 #define DEF_BUTTONPRESSED_SCRIPT	"/etc/scanbuttond/buttonpressed.sh"
 #define DEF_INITSCANNER_SCRIPT		"/etc/scanbuttond/initscanner.sh"
 #define DEF_POLL_DELAY			333000L
@@ -40,6 +42,8 @@
 
 char* buttonpressed_script;
 char* initscanner_script;
+char* backend_filename;
+backend_t* backend;
 long poll_delay;
 long retry_delay;
 int daemonize;
@@ -59,7 +63,8 @@ char* scanbtnd_get_connection_name(int connection) {
 
 void shutdown(void) {
   syslog(LOG_INFO, "shutting down...");
-  scanbtnd_exit();
+  backend->scanbtnd_exit();
+  unload_backend(backend);
   syslog(LOG_INFO, "shutdown complete");
   closelog();
 }
@@ -90,7 +95,14 @@ void execute_as_child(const char* program) {
 // Executes an external program and wait until it terminates
 void execute_and_wait(const char* program) {
   if (!program) return;
-  system(program);
+  int pid = fork();
+  if (pid == 0) {
+    system(program);
+    exit(EXIT_SUCCESS);
+  } else {
+    int status;
+    waitpid(pid, &status, 0);
+  }
 }
 
 
@@ -99,7 +111,7 @@ void list_devices(scanner_device* devices) {
   while (dev != NULL) {
     syslog(LOG_INFO, "found scanner: vendor=\"%s\", product=\"%s\", connection=\"%s\", sane_name=\"%s\"",
       dev->vendor, dev->product, scanbtnd_get_connection_name(dev->connection),
-      scanbtnd_get_sane_device_descriptor(dev));
+      backend->scanbtnd_get_sane_device_descriptor(dev));
     dev = dev->next;
   }
 }
@@ -118,6 +130,8 @@ void show_usage(void) {
   printf("Usage: scanbuttond [OPTION]...\n\n");
   printf("Options:\n");
   printf("  -f, --foreground            Run in foreground instead of background\n");
+  printf("  -b, --backend=FILE          Use the specified backend library file\n");
+  printf("                              default: %s\n", DEF_BACKEND_FILENAME);
   printf("  -s, --buttonscript=SCRIPT   The name of the script to be run when a button has been pressed\n");
   printf("                              default: %s\n", DEF_BUTTONPRESSED_SCRIPT);
   printf("  -S, --initscript=SCRIPT     The name of the script to be run to initialize the scanners\n");
@@ -131,6 +145,7 @@ void show_usage(void) {
 
 static struct option const long_opts[] = {
   {"foreground", no_argument, NULL, 'f'},
+  {"backend", required_argument, NULL, 'b'},
   {"buttonscript", required_argument, NULL, 's'},
   {"initscript", required_argument, NULL, 'S'},
   {"pollingdelay", required_argument, NULL, 'p'},
@@ -150,10 +165,13 @@ void process_options(int argc, char** argv) {
   retry_delay = -1;
   daemonize = 1;
   
-  while ((c = getopt_long (argc, argv, "fs:S:p:r:hv", long_opts, NULL)) != -1) {
+  while ((c = getopt_long (argc, argv, "fb:s:S:p:r:hv", long_opts, NULL)) != -1) {
     switch (c) {
       case 'f':
         daemonize = 0;
+        break;
+      case 'b':
+        backend_filename = optarg;
         break;
       case 's':
         buttonpressed_script = optarg;
@@ -162,7 +180,6 @@ void process_options(int argc, char** argv) {
         initscanner_script = optarg;
         break;
       case 'p':
-        printf("optarg: %s\n", optarg);
         poll_delay = atol(optarg);
         if (poll_delay < MIN_POLL_DELAY) {
           printf("Invalid polling delay (%ld). Must be at least %ld.\n", 
@@ -189,11 +206,8 @@ void process_options(int argc, char** argv) {
     }
   }
   
-  printf("init: %s\n", initscanner_script);
-  printf("btn: %s\n", buttonpressed_script);
-  printf("pdelay: %ld\n", poll_delay);
-  printf("rdelay: %ld\n", retry_delay);
-  
+  if (backend_filename == NULL)
+    backend_filename = DEF_BACKEND_FILENAME;
   if (buttonpressed_script == NULL) 
     buttonpressed_script = DEF_BUTTONPRESSED_SCRIPT;
   if (initscanner_script == NULL) 
@@ -202,11 +216,6 @@ void process_options(int argc, char** argv) {
     poll_delay = DEF_POLL_DELAY;
   if (retry_delay == -1) 
     retry_delay = DEF_RETRY_DELAY;
-    
-  printf("init: %s\n", initscanner_script);
-  printf("btn: %s\n", buttonpressed_script);
-  printf("pdelay: %ld\n", poll_delay);
-  printf("rdelay: %ld\n", retry_delay);
 }
   
 
@@ -217,15 +226,21 @@ int main(int argc, char** argv) {
   scanner_device* dev;
   
   process_options(argc, argv);
+  
+  backend = load_backend(backend_filename);
+  if (!backend) {
+    printf("Unable to load backend library \"%s\"!\n", backend_filename);
+    exit(EXIT_FAILURE);
+  }
 
   // daemonize
   if (daemonize) {
     pid = fork();
     if (pid < 0) { 
       printf("Can't fork!\n");
-      exit(1);
+      exit(EXIT_FAILURE);
     } else if (pid > 0) {
-      exit(0);
+      exit(EXIT_SUCCESS);
     }
   }
   
@@ -239,7 +254,7 @@ int main(int argc, char** argv) {
     sid = setsid();
     if (sid < 0) {
       syslog(LOG_ERR, "Could not create a new SID! Terminating.");
-      exit(1);
+      exit(EXIT_FAILURE);
     }
   }
 
@@ -272,12 +287,12 @@ int main(int argc, char** argv) {
   execute_and_wait(initscanner_script);
   syslog(LOG_DEBUG, "initialization script executed.");
   
-  if (scanbtnd_init() != 0) {
+  if (backend->scanbtnd_init() != 0) {
     syslog(LOG_ERR, "Error initializing backend. Terminating.");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   
-  scanner_device* devices = scanbtnd_get_supported_devices();
+  scanner_device* devices = backend->scanbtnd_get_supported_devices();
   
   if (devices == NULL) {
     syslog(LOG_WARNING, "no known scanner found yet, " \
@@ -299,8 +314,8 @@ int main(int argc, char** argv) {
   
     if (devices == NULL) {
       syslog(LOG_DEBUG, "rescanning devices...");
-      scanbtnd_rescan();
-      devices = scanbtnd_get_supported_devices();
+      backend->scanbtnd_rescan();
+      devices = backend->scanbtnd_get_supported_devices();
       if (devices == NULL) {
         syslog(LOG_DEBUG, "no supported devices found. rescanning in a few seconds...");
         usleep(retry_delay);
@@ -309,31 +324,37 @@ int main(int argc, char** argv) {
       syslog(LOG_DEBUG, "found supported devices. running scanner initialization script...");
       execute_and_wait(initscanner_script);
       syslog(LOG_DEBUG, "initialization script executed.");
+      devices = backend->scanbtnd_get_supported_devices();
+      continue;
     }
     
-    dev = devices;    
+    list_devices(devices);
+    dev = devices;
     while (dev != NULL) {
-      result = scanbtnd_open(dev);
+      result = backend->scanbtnd_open(dev);
       if (result != 0) {
         syslog(LOG_WARNING, "scanbtnd_open failed, error code: %d", result);
         if (result == -ENODEV) {
           // device has been disconnected, force re-scan
           syslog(LOG_INFO, "scanbtnd_open returned -ENODEV, device rescan will be performed");
           devices = NULL;
+          usleep(retry_delay);
+          break;
         }                  
         usleep(retry_delay);
         break;
       }
       
-      button = scanbtnd_get_button(dev);
-      scanbtnd_close(dev);
+      syslog(LOG_DEBUG, "query button");
+      button = backend->scanbtnd_get_button(dev);
+      backend->scanbtnd_close(dev);
         
       if ((button > 0) && (button != dev->lastbutton)) { 
         syslog(LOG_INFO, "button %d has been pressed.", button);
         dev->lastbutton = button;
         char cmd[BUF_SIZE];
         snprintf(cmd, BUF_SIZE, "%s %d %s", buttonpressed_script, button, 
-                 scanbtnd_get_sane_device_descriptor(dev));
+                 backend->scanbtnd_get_sane_device_descriptor(dev));
         execute_as_child(cmd);
       }
       if ((button == 0) && (dev->lastbutton > 0)) {

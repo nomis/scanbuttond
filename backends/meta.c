@@ -37,101 +37,6 @@ scanner_device* meta_scanners = NULL;
 backend_t* meta_backends = NULL;
 
 
-backend_t* meta_load_backend(const char* path, const char* name) {
-  const char* prefix = "lib";
-  const char* suffix = ".so";
-  char* error;
-  char* libpath = (char*)malloc(strlen(path) + strlen(name) + strlen(prefix) + strlen(suffix) + 2);
-  strcpy(libpath, path);
-  strcat(libpath, "/");
-  strcat(libpath, prefix);
-  strcat(libpath, name);
-  strcat(libpath, suffix);
-  void* dll_handle = dlopen(libpath, RTLD_LAZY|RTLD_GLOBAL);
-  if (!dll_handle) {
-    syslog(LOG_ERR, "meta-backend: failed to load \"%s\". Error message: \"%s\"",
-      libpath, dlerror());
-    free(libpath);
-    return NULL;
-  }
-  free(libpath);
-  dlerror();  // Clear any existing error
-  backend_t* backend = (backend_t*)malloc(sizeof(backend_t));
-  backend->handle = dll_handle;
-  backend->scanbtnd_get_backend_name = dlsym(dll_handle, "scanbtnd_get_backend_name");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_init = dlsym(dll_handle, "scanbtnd_init");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);    
-    return NULL;
-  }
-  backend->scanbtnd_rescan = dlsym(dll_handle, "scanbtnd_rescan");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_get_supported_devices = dlsym(dll_handle, "scanbtnd_get_supported_devices");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_open = dlsym(dll_handle, "scanbtnd_open");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_close = dlsym(dll_handle, "scanbtnd_close");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_get_button = dlsym(dll_handle, "scanbtnd_get_button");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_get_sane_device_descriptor = dlsym(dll_handle, "scanbtnd_get_sane_device_descriptor");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_exit = dlsym(dll_handle, "scanbtnd_exit");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "meta-backend: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }  
-
-  return backend;
-}
-
-
-void meta_unload_backend(backend_t* backend) {
-  dlclose(backend->handle);
-  free(backend);
-}
-
-
 char* scanbtnd_get_backend_name(void) {
   return backend_name;
 }
@@ -168,18 +73,21 @@ void meta_attach_scanners(scanner_device* devices, backend_t* backend) {
 }
 
 
-void meta_detach_scanner(scanner_device* scanner) {
+void meta_detach_scanner(scanner_device* scanner, scanner_device* prev_scanner) {
   syslog(LOG_INFO, "meta-backend: detaching scanner: \"%s %s\"", scanner->vendor, scanner->product);
+  if (prev_scanner != NULL)
+    prev_scanner->next = scanner->next;
+  else if (scanner == meta_scanners)
+    meta_scanners = scanner->next;
+  else
+    syslog(LOG_WARNING, "meta-backend: detach scanner: invalid arguments!");
   free(scanner);
 }
 
 
 void meta_detach_scanners(void) {
-  scanner_device* next;
   while (meta_scanners != NULL) {
-    next = meta_scanners->next;    
-    meta_detach_scanner(meta_scanners);
-    meta_scanners = next;
+    meta_detach_scanner(meta_scanners, NULL);
   }
 }
 
@@ -194,23 +102,25 @@ int meta_attach_backend(backend_t* backend) {
   backend->next = meta_backends;
   meta_backends = backend;  
   backend->scanbtnd_init();  
-  meta_attach_scanners(backend->scanbtnd_get_supported_devices(), backend);
   return 0;
 }
 
 
-void meta_detach_backend(backend_t* backend) {
+void meta_detach_backend(backend_t* backend, backend_t* prev_backend) {
+  if (prev_backend != NULL)
+    prev_backend->next = backend->next;
+  else if (backend == meta_backends)
+    meta_backends = backend->next;
+  else
+    syslog(LOG_WARNING, "meta-backend: detach backend: invalid arguments!");
   backend->scanbtnd_exit();
-  meta_unload_backend(backend);
+  unload_backend(backend);
 }
 
 		
 void meta_detach_backends(void) {
-  backend_t* next;
   while (meta_backends != NULL) {
-    next = meta_backends->next;    
-    meta_detach_backend(meta_backends);
-    meta_backends = next;
+    meta_detach_backend(meta_backends, NULL);    
   }
 }
 
@@ -233,7 +143,7 @@ int scanbtnd_init(void) {
   meta_backends = NULL;
   
   syslog(LOG_INFO, "meta-backend: init");
-  libusb_init();
+  //libusb_init();
   
   // read config file
   char libdir[MAX_CONFIG_LINE];
@@ -249,9 +159,15 @@ int scanbtnd_init(void) {
   while (fgets(lib, MAX_CONFIG_LINE, f)) {
     meta_strip_newline(lib);
     if (strlen(lib)==0) continue;
-    backend = meta_load_backend(libdir, lib);
-    if (backend != NULL) {
-      meta_attach_backend(backend);
+    char *libpath = (char*)malloc(strlen(libdir) + strlen(lib) + 8);
+    strcpy(libpath, libdir);
+    strcat(libpath, "/lib");
+    strcat(libpath, lib);
+    strcat(libpath, ".so");
+    backend = load_backend(libpath);
+    free(libpath);
+    if (backend != NULL && meta_attach_backend(backend)==0) {
+      meta_attach_scanners(backend->scanbtnd_get_supported_devices(), backend);
     }
   }
   fclose(f);
@@ -263,16 +179,25 @@ int scanbtnd_init(void) {
 int scanbtnd_rescan(void) {
   backend_t* backend;
   
+  syslog(LOG_DEBUG, "meta: beginning rescan");
+  
   meta_detach_scanners();
   meta_scanners = NULL;
   
   backend = meta_backends;
   while (backend != NULL) {
     backend->scanbtnd_rescan();
+    backend = backend->next;
+  }
+  
+  backend = meta_backends;
+  while (backend != NULL) {
     meta_attach_scanners(backend->scanbtnd_get_supported_devices(), backend); 
     backend = backend->next;
   }
-    
+  
+  syslog(LOG_DEBUG, "meta: finished rescan");
+  
   return 0;
 }
 
@@ -282,12 +207,29 @@ scanner_device* scanbtnd_get_supported_devices(void) {
 }
 
 
-int scanbtnd_open(scanner_device* scanner) {  
+int scanbtnd_open(scanner_device* scanner) {
+  // TODO: remove debug code!
+  /*
+  int found = 0;
+  scanner_device *dev = meta_scanners;
+  while (dev != NULL) {
+    if (dev == scanner) {
+      found = 1;
+      break;
+    }
+    dev = dev->next;
+  }
+  if (found == 0) {
+    syslog(LOG_WARNING, "meta-backend: attempted to open stale device descriptor!!!");
+    return -1;
+  }
+  */
   // if devices have been added/removed, return -ENODEV to
   // make scanbuttond update its device list
-  if (libusb_get_changed_device_count() != 0) {
-    return -ENODEV;
-  }
+  //if (libusb_get_changed_device_count() != 0) {
+  //  return -ENODEV;
+  //}
+  syslog(LOG_DEBUG, "meta-backend: open"); 
   backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_open(scanner);
@@ -295,6 +237,7 @@ int scanbtnd_open(scanner_device* scanner) {
 
 
 int scanbtnd_close(scanner_device* scanner) {
+  syslog(LOG_DEBUG, "meta-backend: close");
   backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_close(scanner);
@@ -319,7 +262,7 @@ int scanbtnd_exit(void) {
   syslog(LOG_INFO, "meta-backend: exit");
   meta_detach_scanners();
   meta_detach_backends();
-  libusb_exit();
+  //libusb_exit();
   return 0;
 }
 
