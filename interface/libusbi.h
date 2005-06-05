@@ -22,10 +22,10 @@
 #include <usb.h>
 #include "scanbuttond.h"
 
-struct usb_scanner;
-typedef struct usb_scanner usb_scanner;
+struct libusb_device;
+typedef struct libusb_device libusb_device_t;
 
-struct usb_scanner {
+struct libusb_device {
 	int vendorID;
 	int productID;
 	char* location; // bus number + ":" + device number
@@ -34,7 +34,7 @@ struct usb_scanner {
 	int interface;
 	int out_endpoint;
 	int in_endpoint;
-	usb_scanner* next;
+	libusb_device_t* next;
 };
 
 int libusb_init(void);
@@ -43,19 +43,20 @@ int libusb_get_changed_device_count(void);
 
 void libusb_rescan(void);
 
-usb_scanner* libusb_get_devices(void);
+libusb_device_t* libusb_get_devices(void);
 
 // returns 0 on success, -EBUSY if the scanner is currently in use, 
 // or -ENODEV if the scanner does no longer exist
-int libusb_open(usb_scanner* scanner);
+int libusb_open(libusb_device_t* device);
 
-int libusb_close(usb_scanner* scanner);
+int libusb_close(libusb_device_t* device);
 
-int libusb_read(usb_scanner* scanner, void* buffer, int bytecount);
+int libusb_read(libusb_device_t* device, void* buffer, int bytecount);
 
-int libusb_write(usb_scanner* scanner, void* buffer, int bytecount);
+int libusb_write(libusb_device_t* device, void* buffer, int bytecount);
 
-int libusb_control_msg(usb_scanner* scanner, int requesttype, int request, int value, int index, void* bytes, int size);
+int libusb_control_msg(libusb_device_t* device, int requesttype, 
+                       int request, int value, int index, void* bytes, int size);
 
 int libusb_exit(void);
 

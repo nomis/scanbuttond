@@ -39,6 +39,9 @@
 #define MIN_RETRY_DELAY			10000L
 #define BUF_SIZE			256
 
+static char* connection_names[NUM_CONNECTIONS] = 
+    { "none", "libusb" };
+
 
 char* buttonpressed_script;
 char* initscanner_script;
@@ -47,11 +50,6 @@ backend_t* backend;
 long poll_delay;
 long retry_delay;
 int daemonize;
-
-
-static char* connection_names[CONNECTIONS_COUNT] = 
-    { "none", "libusb" };
-
 int killed = 0;
 char* path;
 
@@ -106,8 +104,8 @@ void execute_and_wait(const char* program) {
 }
 
 
-void list_devices(scanner_device* devices) {
-  scanner_device* dev = devices;
+void list_devices(scanner_t* devices) {
+  scanner_t* dev = devices;
   while (dev != NULL) {
     syslog(LOG_INFO, "found scanner: vendor=\"%s\", product=\"%s\", connection=\"%s\", sane_name=\"%s\"",
       dev->vendor, dev->product, scanbtnd_get_connection_name(dev->connection),
@@ -223,7 +221,8 @@ int main(int argc, char** argv) {
   int button;
   int result;
   pid_t pid, sid;
-  scanner_device* dev;
+  scanner_t* scanners;
+  scanner_t* scanner;
   
   process_options(argc, argv);
   
@@ -292,14 +291,14 @@ int main(int argc, char** argv) {
     exit(EXIT_FAILURE);
   }
   
-  scanner_device* devices = backend->scanbtnd_get_supported_devices();
+  scanners = backend->scanbtnd_get_supported_devices();
   
-  if (devices == NULL) {
+  if (scanners == NULL) {
     syslog(LOG_WARNING, "no known scanner found yet, " \
     	"waiting for device to be attached");
   }
   
-  list_devices(devices);
+  list_devices(scanners);
 
   signal(SIGTERM, &sighandler);
   signal(SIGHUP, &sighandler);
@@ -312,11 +311,11 @@ int main(int argc, char** argv) {
   // main loop
   while (killed == 0) {
   
-    if (devices == NULL) {
+    if (scanners == NULL) {
       syslog(LOG_DEBUG, "rescanning devices...");
       backend->scanbtnd_rescan();
-      devices = backend->scanbtnd_get_supported_devices();
-      if (devices == NULL) {
+      scanners = backend->scanbtnd_get_supported_devices();
+      if (scanners == NULL) {
         syslog(LOG_DEBUG, "no supported devices found. rescanning in a few seconds...");
         usleep(retry_delay);
         continue;
@@ -324,20 +323,20 @@ int main(int argc, char** argv) {
       syslog(LOG_DEBUG, "found supported devices. running scanner initialization script...");
       execute_and_wait(initscanner_script);
       syslog(LOG_DEBUG, "initialization script executed.");
-      devices = backend->scanbtnd_get_supported_devices();
+      scanners = backend->scanbtnd_get_supported_devices();
       continue;
     }
     
-    list_devices(devices);
-    dev = devices;
-    while (dev != NULL) {
-      result = backend->scanbtnd_open(dev);
+    list_devices(scanners);
+    scanner = scanners;
+    while (scanner != NULL) {
+      result = backend->scanbtnd_open(scanner);
       if (result != 0) {
         syslog(LOG_WARNING, "scanbtnd_open failed, error code: %d", result);
         if (result == -ENODEV) {
           // device has been disconnected, force re-scan
           syslog(LOG_INFO, "scanbtnd_open returned -ENODEV, device rescan will be performed");
-          devices = NULL;
+          scanners = NULL;
           usleep(retry_delay);
           break;
         }                  
@@ -346,22 +345,22 @@ int main(int argc, char** argv) {
       }
       
       syslog(LOG_DEBUG, "query button");
-      button = backend->scanbtnd_get_button(dev);
-      backend->scanbtnd_close(dev);
+      button = backend->scanbtnd_get_button(scanner);
+      backend->scanbtnd_close(scanner);
         
-      if ((button > 0) && (button != dev->lastbutton)) { 
+      if ((button > 0) && (button != scanner->lastbutton)) { 
         syslog(LOG_INFO, "button %d has been pressed.", button);
-        dev->lastbutton = button;
+        scanner->lastbutton = button;
         char cmd[BUF_SIZE];
         snprintf(cmd, BUF_SIZE, "%s %d %s", buttonpressed_script, button, 
-                 backend->scanbtnd_get_sane_device_descriptor(dev));
+                 backend->scanbtnd_get_sane_device_descriptor(scanner));
         execute_as_child(cmd);
       }
-      if ((button == 0) && (dev->lastbutton > 0)) {
-        syslog(LOG_INFO, "button %d has been released.", dev->lastbutton);
-        dev->lastbutton = button;
+      if ((button == 0) && (scanner->lastbutton > 0)) {
+        syslog(LOG_INFO, "button %d has been released.", scanner->lastbutton);
+        scanner->lastbutton = button;
       } 
-      dev = dev->next;
+      scanner = scanner->next;
     }
     
     usleep(poll_delay);

@@ -80,7 +80,7 @@ backends/libniash.so.1.0: interface/libusbi.so.1.0 backends/niash.c backends/nia
 
 backends/libmeta.so.1.0: interface/libusbi.so.1.0 lib/loader.o backends/meta.c backends/meta.h backends/backend.h
 	$(CC) $(CFLAGS) -c -fPIC backends/meta.c -o backends/meta.o
-	$(CC) -shared -L./interface -Wl,-soname,libmeta.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libmeta.so.1.0 backends/meta.o lib/loader.o -ldl
+	$(CC) -shared -L./interface -Wl,-soname,libmeta.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libmeta.so.1.0 backends/meta.o lib/loader.o -ldl -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libmeta.so.1 backends/libmeta.so
 

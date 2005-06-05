@@ -25,16 +25,17 @@
 #include <syslog.h>
 #include "libusbi.h"
 
-#define TIMEOUT	   	30 * 1000	/* 30 seconds */
+#define TIMEOUT	   	10 * 1000	/* 10 seconds */
 
-usb_scanner* usb_devices = NULL;
+libusb_device_t* usb_devices = NULL;
 int invocation_count = 0;
 
 
 int libusb_init(void) {
+  syslog(LOG_INFO, "libusbi: libusb_init, invocation counter=%d", invocation_count);
   invocation_count++;
   if (invocation_count != 1) return 0;
-  syslog(LOG_INFO, "initializing libusb wrapper");
+  syslog(LOG_INFO, "libusbi: initializing...");
   usb_init();
   libusb_rescan();
   return 0;
@@ -127,40 +128,46 @@ int libusb_search_out_endpoint(struct usb_device* device) {
 
 
 void libusb_attach_device(struct usb_device* device) {
-  usb_scanner* scanner = (usb_scanner*)malloc(sizeof(usb_scanner));
-  scanner->vendorID = device->descriptor.idVendor;
-  scanner->productID = device->descriptor.idProduct;
+  libusb_device_t* libusb_device = (libusb_device_t*)malloc(sizeof(libusb_device_t));
+  libusb_device->vendorID = device->descriptor.idVendor;
+  libusb_device->productID = device->descriptor.idProduct;
   
   // the location string consists of bus number, followed by a colon (":"), and the device number
-  scanner->location = (char*)malloc(strlen(device->bus->dirname) + strlen(device->filename) + 2);
-  strcpy(scanner->location, device->bus->dirname);
-  strcat(scanner->location, ":");
-  strcat(scanner->location, device->filename);
+  libusb_device->location = (char*)malloc(strlen(device->bus->dirname) + strlen(device->filename) + 2);
+  strcpy(libusb_device->location, device->bus->dirname);
+  strcat(libusb_device->location, ":");
+  strcat(libusb_device->location, device->filename);
   
-  scanner->device = device;
-  scanner->handle = NULL;
-  scanner->interface = libusb_search_interface(device);
-  if (scanner->interface < 0) {
-    free(scanner);
+  libusb_device->device = device;
+  libusb_device->handle = NULL;
+  libusb_device->interface = libusb_search_interface(device);
+  if (libusb_device->interface < 0) {
+    syslog(LOG_ERR, "libusbi: no valid interface found for device %s", libusb_device->location);
+    free(libusb_device->location);
+    free(libusb_device);
     return;
   }
-  scanner->out_endpoint = libusb_search_out_endpoint(device);
-  if (scanner->out_endpoint < 0) {
-    free(scanner);
+  libusb_device->out_endpoint = libusb_search_out_endpoint(device);
+  if (libusb_device->out_endpoint < 0) {
+    syslog(LOG_ERR, "libusbi: no valid outbound endpoint found for device %s", libusb_device->location);
+    free(libusb_device->location);
+    free(libusb_device);
     return;
   }  
-  scanner->in_endpoint = libusb_search_in_endpoint(device);
-  if (scanner->in_endpoint < 0) {
-    free(scanner);
+  libusb_device->in_endpoint = libusb_search_in_endpoint(device);
+  if (libusb_device->in_endpoint < 0) {
+    syslog(LOG_ERR, "libusbi: no valid inbound endpoint found for device %s", libusb_device->location);
+    free(libusb_device->location);
+    free(libusb_device);
     return;
   }
-  scanner->next = usb_devices;
-  usb_devices = scanner;
+  libusb_device->next = usb_devices;
+  usb_devices = libusb_device;
 }
 
 
 void libusb_detach_devices(void) {
-  usb_scanner* next;
+  libusb_device_t* next;
   while (usb_devices != NULL) {
     next = usb_devices->next;
     free(usb_devices->location);
@@ -174,7 +181,7 @@ void libusb_rescan(void) {
   struct usb_bus *bus;
   struct usb_device *device;
   
-  syslog(LOG_DEBUG, "rescanning usb devices...");
+  syslog(LOG_DEBUG, "libusbi: rescanning usb devices...");
 
   libusb_detach_devices();
     
@@ -192,7 +199,7 @@ void libusb_rescan(void) {
     bus = bus->next;
   }
   
-  syslog(LOG_DEBUG, "rescan complete");
+  syslog(LOG_DEBUG, "libusbi: rescan complete");
   
 }
 
@@ -203,93 +210,104 @@ int libusb_get_changed_device_count(void) {
 }  
 
 
-usb_scanner* libusb_get_devices(void) {
+libusb_device_t* libusb_get_devices(void) {
   return usb_devices;
 }
 
 
-int libusb_open(usb_scanner* scanner) {
+int libusb_open(libusb_device_t* device) {
   int result;
   
-  if (!scanner->device || libusb_get_changed_device_count() != 0)
+  if (!device->device)
     return -ENODEV;
   
-  syslog(LOG_DEBUG, "libusb_open entered");
+  syslog(LOG_DEBUG, "libusbi: opening device %s", device->location);
   
-  scanner->handle = usb_open(scanner->device);
-  if (scanner->handle == NULL) {
-    syslog(LOG_INFO, "usb_open failed!");
+  device->handle = usb_open(device->device);
+  if (device->handle == NULL) {
+    syslog(LOG_ERR, "libusbi: could not open device %s", device->location);
     return -ENODEV;
   }
   
-  syslog(LOG_DEBUG, "claiming interface...");
+  syslog(LOG_DEBUG, "libusbi: claiming interface...");
   
   // Calling usb_set_configuration should not be necessary. It is even considered harmful, since
   // it disturbs other processes which are currently communicating with the scanner!
   // usb_set_configuration(scanner->handle,
   //   usb_device(scanner->handle)->config[0].bConfigurationValue);
    
-  result = usb_claim_interface(scanner->handle, scanner->interface);
+  result = usb_claim_interface(device->handle, device->interface);
   switch (result) {
     case 0:
-      syslog(LOG_DEBUG, "usb_open completed");
+      syslog(LOG_DEBUG, "libusbi: usb_open completed");
       return 0;
     case -ENOMEM:
-      syslog(LOG_ERR, "usb_claim_interface returned -ENOMEM!!!");
-      usb_close(scanner->handle);
+      syslog(LOG_ERR, "libusbi: could not claim interface for device %s. (ENOMEM)", device->location);
+      usb_close(device->handle);
       return -ENODEV;
     case -EBUSY:
-      syslog(LOG_INFO, "usb_claim_interface return -EBUSY.");
-      usb_close(scanner->handle);
+      syslog(LOG_ERR, "libusbi: could not claim interface for device %s. (EBUSY)", device->location);
+      usb_close(device->handle);
       return -EBUSY;
     default:
-      syslog(LOG_WARNING, "usb_claim_interface returned something strange (%d)!!! " \
-        "Please contact me (mailto:root84@users.sourceforge.net) and include this message!", result);
-      usb_close(scanner->handle);
+      syslog(LOG_ERR, "libusbi: could not claim interface for device %s. (code=%d)", device->location, result);
+      usb_close(device->handle);
       return -ENODEV;
   }
 }
 
 
-int libusb_close(usb_scanner* scanner) {
-  return usb_close(scanner->handle);
+int libusb_close(libusb_device_t* device) {
+  int result;
+  result = usb_release_interface(device->handle, device->interface);
+  if (result < 0) {
+    syslog(LOG_ERR, "libusbi: could not release interface, error code=%d, device=%s", result, device->location);
+    return result;
+  }
+  result = usb_close(device->handle);
+  if (result < 0) {
+    syslog(LOG_ERR, "libusbi: could not close usb device, error code=%d, device=%s", result, device->location);
+    return result;
+  }
+  return 0;
 }
 
 
-int libusb_read(usb_scanner* scanner, void* buffer, int bytecount) {
-  int num_bytes = usb_bulk_read(scanner->handle, scanner->in_endpoint, buffer, bytecount, TIMEOUT);  
+int libusb_read(libusb_device_t* device, void* buffer, int bytecount) {
+  int num_bytes = usb_bulk_read(device->handle, device->in_endpoint, buffer, bytecount, TIMEOUT);  
   if (num_bytes<0) {
-    usb_clear_halt(scanner->handle, scanner->in_endpoint);
+    usb_clear_halt(device->handle, device->in_endpoint);
     return 0;
   }
   return num_bytes;
 }
 
 
-int libusb_write(usb_scanner* scanner, void* buffer, int bytecount) {
-  int num_bytes = usb_bulk_write(scanner->handle, scanner->out_endpoint, buffer, bytecount, TIMEOUT);
+int libusb_write(libusb_device_t* device, void* buffer, int bytecount) {
+  int num_bytes = usb_bulk_write(device->handle, device->out_endpoint, buffer, bytecount, TIMEOUT);
   if (num_bytes<0) {
-    usb_clear_halt(scanner->handle, scanner->in_endpoint);
+    usb_clear_halt(device->handle, device->in_endpoint);
     return 0;
   }
   return num_bytes;
 }
 
-int libusb_control_msg(usb_scanner* scanner, int requesttype, int request, int value, int index, void* bytes, int size) {
-  int num_bytes = usb_control_msg(scanner->handle, requesttype, request, value, index, bytes, size, TIMEOUT);
+
+int libusb_control_msg(libusb_device_t* device, int requesttype, int request, int value, int index, void* bytes, int size) {
+  int num_bytes = usb_control_msg(device->handle, requesttype, request, value, index, bytes, size, TIMEOUT);
   if (num_bytes<0) {
-    usb_clear_halt(scanner->handle, scanner->in_endpoint);
+    usb_clear_halt(device->handle, device->in_endpoint);
     return 0;
   }
   return num_bytes;
 }
-
 
 
 int libusb_exit(void) {
+  syslog(LOG_INFO, "libusbi: libusb_exit, invocation counter=%d", invocation_count);
   invocation_count--;
   if (invocation_count != 0) return 0;
-  syslog(LOG_INFO, "shutting down libusb wrapper");
+  syslog(LOG_INFO, "libusbi: shutting down...");
   libusb_detach_devices();
   return 0;
 }

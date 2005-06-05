@@ -21,29 +21,5 @@
 
 #include "backend.h"
 #include "lib/loader.h"
-/*
-struct backend;
-typedef struct backend backend_t;
-
-struct backend {
-  char* (*scanbtnd_get_backend_name)(void);
-  int (*scanbtnd_init)(void);
-  int (*scanbtnd_rescan)(void);
-  scanner_device* (*scanbtnd_get_supported_devices)(void);
-  int (*scanbtnd_open)(scanner_device* scanner);
-  int (*scanbtnd_close)(scanner_device* scanner);
-  int (*scanbtnd_get_button)(scanner_device* scanner);
-  char* (*scanbtnd_get_sane_device_descriptor)(scanner_device* scanner);
-  int (*scanbtnd_exit)(void);
-  
-  void* handle;  // handle for dlopen/dlsym/dlclose
-  
-  backend_t* next;
-};
-
-backend_t* load_backend(const char* path, const char* name);
-
-void unload_backend(backend_t* backend);
-*/
 
 #endif

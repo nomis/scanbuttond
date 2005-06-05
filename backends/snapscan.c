@@ -1,4 +1,4 @@
-// Snapscan scanner backend
+// scanbuttond - Snapscan device backend
 // Copyleft )c( 2005 by Bernhard Stiftner
 // Thanks to J. Javier Maestro for sniffing the button codes ;-)
 //
@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,16 +42,16 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 };
 
 
-scanner_device* snapscan_scanners = NULL;
+scanner_t* snapscan_scanners = NULL;
 
 
 // returns -1 if the scanner is unsupported, or the index of the
 // corresponding vendor-product pair in the supported_usb_devices array.
-int snapscan_match_libusb_scanner(usb_scanner* scanner) {
+int snapscan_match_libusb_scanner(libusb_device_t* device) {
   int index;
   for (index = 0; index < NUM_SUPPORTED_USB_DEVICES; index++) {
-    if (supported_usb_devices[index][0] == scanner->vendorID &&
-        supported_usb_devices[index][1] == scanner->productID) {
+    if (supported_usb_devices[index][0] == device->vendorID &&
+        supported_usb_devices[index][1] == device->productID) {
       break;
     }
   }
@@ -61,26 +60,26 @@ int snapscan_match_libusb_scanner(usb_scanner* scanner) {
 }
 
 // TODO: check if the descriptor matches the SANE device name!
-void snapscan_attach_libusb_scanner(usb_scanner* scanner) {
+void snapscan_attach_libusb_scanner(libusb_device_t* device) {
   const char* descriptor_prefix = "snapscan:libusb:";
-  int index = snapscan_match_libusb_scanner(scanner);
+  int index = snapscan_match_libusb_scanner(device);
   if (index < 0) return; // unsupported
-  scanner_device* dev = (scanner_device*)malloc(sizeof(scanner_device));
-  dev->vendor = usb_device_descriptions[index][0];
-  dev->product = usb_device_descriptions[index][1];
-  dev->connection = CONNECTION_LIBUSB;
-  dev->internal_dev_ptr = (void*)scanner;
-  dev->lastbutton = 0;
-  dev->sane_device = (char*)malloc(strlen(scanner->location) + strlen(descriptor_prefix) + 1);
-  strcpy(dev->sane_device, descriptor_prefix);
-  strcat(dev->sane_device, scanner->location);  
-  dev->next = snapscan_scanners;
-  snapscan_scanners = dev;
+  scanner_t* scanner = (scanner_t*)malloc(sizeof(scanner_t));
+  scanner->vendor = usb_device_descriptions[index][0];
+  scanner->product = usb_device_descriptions[index][1];
+  scanner->connection = CONNECTION_LIBUSB;
+  scanner->internal_dev_ptr = (void*)device;
+  scanner->lastbutton = 0;
+  scanner->sane_device = (char*)malloc(strlen(device->location) + strlen(descriptor_prefix) + 1);
+  strcpy(scanner->sane_device, descriptor_prefix);
+  strcat(scanner->sane_device, device->location);  
+  scanner->next = snapscan_scanners;
+  snapscan_scanners = scanner;
 }
 
 
 void snapscan_detach_scanners(void) {
-  scanner_device* next;
+  scanner_t* next;
   while (snapscan_scanners != NULL) {
     next = snapscan_scanners->next;
     free(snapscan_scanners->sane_device);
@@ -90,22 +89,23 @@ void snapscan_detach_scanners(void) {
 }
 
 
-void snapscan_scan_devices(usb_scanner* scanner) {
+void snapscan_scan_devices(libusb_device_t* devices) {
   int index;
-  while (scanner != NULL) {
-    index = snapscan_match_libusb_scanner(scanner);
-    if (index >= 0) snapscan_attach_libusb_scanner(scanner);
-    scanner = scanner->next;
+  libusb_device_t* device = devices;
+  while (device != NULL) {
+    index = snapscan_match_libusb_scanner(device);
+    if (index >= 0) snapscan_attach_libusb_scanner(device);
+    device = device->next;
   }
 }
 
 
 int snapscan_init_libusb(void) {
-  usb_scanner* scanner;
+  libusb_device_t* devices;
   
   libusb_init();
-  scanner = libusb_get_devices();
-  snapscan_scan_devices(scanner);
+  devices = libusb_get_devices();
+  snapscan_scan_devices(devices);
   return 0;
 }
 
@@ -124,23 +124,23 @@ int scanbtnd_init(void) {
 
 
 int scanbtnd_rescan(void) {
-  usb_scanner* scanner;
+  libusb_device_t* devices;
   
   snapscan_detach_scanners();
   snapscan_scanners = NULL;
   libusb_rescan();
-  scanner = libusb_get_devices();
-  snapscan_scan_devices(scanner);
+  devices = libusb_get_devices();
+  snapscan_scan_devices(devices);
   return 0;
 }
 
 
-scanner_device* scanbtnd_get_supported_devices(void) {
+scanner_t* scanbtnd_get_supported_devices(void) {
   return snapscan_scanners;
 }
 
 
-int scanbtnd_open(scanner_device* scanner) {  
+int scanbtnd_open(scanner_t* scanner) {  
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
       // if devices have been added/removed, return -ENODEV to
@@ -148,44 +148,44 @@ int scanbtnd_open(scanner_device* scanner) {
       if (libusb_get_changed_device_count() != 0) {
         return -ENODEV;
       }
-      return libusb_open((usb_scanner*)scanner->internal_dev_ptr);
+      return libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
     break;
   }
   return -1;
 }
 
 
-int scanbtnd_close(scanner_device* scanner) {
+int scanbtnd_close(scanner_t* scanner) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
-      return libusb_close((usb_scanner*)scanner->internal_dev_ptr);
+      return libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
     break;
   }
   return -1;
 }
 
 
-int snapscan_read(scanner_device* scanner, void* buffer, int bytecount) {
+int snapscan_read(scanner_t* scanner, void* buffer, int bytecount) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
-      return libusb_read((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
+      return libusb_read((libusb_device_t*)scanner->internal_dev_ptr, buffer, bytecount);
     break;
   }
   return -1;
 }
 
 
-int snapscan_write(scanner_device* scanner, void* buffer, int bytecount) {
+int snapscan_write(scanner_t* scanner, void* buffer, int bytecount) {
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
-      return libusb_write((usb_scanner*)scanner->internal_dev_ptr, buffer, bytecount);
+      return libusb_write((libusb_device_t*)scanner->internal_dev_ptr, buffer, bytecount);
     break;
   }
   return -1;
 }
 
 
-int scanbtnd_get_button(scanner_device* scanner) {
+int scanbtnd_get_button(scanner_t* scanner) {
   unsigned char bytes[255];
   int num_bytes;
   int button;
@@ -219,7 +219,7 @@ int scanbtnd_get_button(scanner_device* scanner) {
 }
 
 
-char* scanbtnd_get_sane_device_descriptor(scanner_device* scanner) {
+char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
   return scanner->sane_device;
 }
 

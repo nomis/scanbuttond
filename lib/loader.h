@@ -28,11 +28,11 @@ struct backend {
   char* (*scanbtnd_get_backend_name)(void);
   int (*scanbtnd_init)(void);
   int (*scanbtnd_rescan)(void);
-  scanner_device* (*scanbtnd_get_supported_devices)(void);
-  int (*scanbtnd_open)(scanner_device* scanner);
-  int (*scanbtnd_close)(scanner_device* scanner);
-  int (*scanbtnd_get_button)(scanner_device* scanner);
-  char* (*scanbtnd_get_sane_device_descriptor)(scanner_device* scanner);
+  scanner_t* (*scanbtnd_get_supported_devices)(void);
+  int (*scanbtnd_open)(scanner_t* scanner);
+  int (*scanbtnd_close)(scanner_t* scanner);
+  int (*scanbtnd_get_button)(scanner_t* scanner);
+  char* (*scanbtnd_get_sane_device_descriptor)(scanner_t* scanner);
   int (*scanbtnd_exit)(void);
   
   void* handle;  // handle for dlopen/dlsym/dlclose

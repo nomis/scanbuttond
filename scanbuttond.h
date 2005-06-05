@@ -1,5 +1,4 @@
-//
-// Epson GT-9300 scanner button daemon
+// scanbuttond - a scanner button daemon for Linux
 // Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
@@ -15,22 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//
 
 #ifndef SCANBUTTOND_H_INCLUDED
 #define SCANBUTTOND_H_INCLUDED
 
 // connection types
-#define CONNECTIONS_COUNT	2
+#define NUM_CONNECTIONS		2
 #define CONNECTION_NONE		0
 #define CONNECTION_LIBUSB 	1
 
-char* scanbtnd_get_connection_name(int connection);
+struct scanner;
+typedef struct scanner scanner_t;
 
-struct scanner_device;
-typedef struct scanner_device scanner_device;
-
-struct scanner_device {
+struct scanner {
 	char* vendor;
 	char* product;
 	int connection;
@@ -39,7 +35,9 @@ struct scanner_device {
 	void* meta_info;
         int lastbutton;
 	
-        scanner_device* next;
+        scanner_t* next;
 };
+
+char* scanbtnd_get_connection_name(int connection);
 
 #endif
