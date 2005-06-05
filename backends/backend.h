@@ -1,4 +1,4 @@
-// Prototypes for functions to be implemented in every backend
+// backend.h: specification of the mandatory backend functions
 // This file is part of scanbuttond.
 // Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
@@ -27,21 +27,21 @@ char* scanbtnd_get_backend_name(void);
 // Initialize backend, search for supported devices
 int scanbtnd_init(void);
 
-// Rescan for supported scanners.
+// Rescan device list, detect new supported devices
 int scanbtnd_rescan(void);
 
-// Returns a linked list of scanner devices which are supported by this backend.
+// Returns a linked list of scanner devices which are supported by this backend
 scanner_t* scanbtnd_get_supported_devices(void);
 
-// Opens the given scanner. WARNING! Access to the scanner will be blocked for 
-// other applications (like SANE) until you call scanbtnd_close(,,,), 
+// Opens the given scanner. WARNING! Access to the scanner will be blocked for
+// other applications (like SANE) until you call scanbtnd_close(,,,),
 int scanbtnd_open(scanner_t* scanner);
 
-// Closes the given scanner device. After that, other applications may access the 
+// Closes the given scanner device. After that, other applications may access the
 // scanner again.
 int scanbtnd_close(scanner_t* scanner);
 
-// Query the given scanner's button status. Returns the number of the pressed button 
+// Query the given scanner's button status. Returns the number of the pressed button
 // or 0 if no button is currently pressed.
 int scanbtnd_get_button(scanner_t* scanner);
 

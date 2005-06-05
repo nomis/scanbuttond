@@ -1,4 +1,5 @@
-// Epson GT-9300 scanner button daemon
+// epson.h: Epson ESC/I device backend
+// This file is part of scanbuttond.
 // Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or

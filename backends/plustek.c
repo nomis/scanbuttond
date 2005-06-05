@@ -1,4 +1,5 @@
-// scanbuttond - Plustek device backend
+// plustek.c: Plustek device backend
+// This file is part of scanbuttond.
 // Copyleft )c( 2005 by Hans Verkuil
 // Copyleft )c( 2005 by Bernhard Stiftner
 //
@@ -42,187 +43,210 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Canon", "CanonScan N650U" }
 };
 
+
 libusb_handle_t* libusb_handle;
 scanner_t* plustek_scanners = NULL;
 
 
 // returns -1 if the scanner is unsupported, or the index of the
 // corresponding vendor-product pair in the supported_usb_devices array.
-int plustek_match_libusb_scanner(libusb_device_t* device) {
-  int index;
-  for (index = 0; index < NUM_SUPPORTED_USB_DEVICES; index++) {
-    if (supported_usb_devices[index][0] == device->vendorID &&
-        supported_usb_devices[index][1] == device->productID) {
-      break;
-    }
-  }
-  if (index >= NUM_SUPPORTED_USB_DEVICES) return -1;
-  return index;
+int plustek_match_libusb_scanner(libusb_device_t* device)
+{
+	int index;
+	for (index = 0; index < NUM_SUPPORTED_USB_DEVICES; index++) {
+		if (supported_usb_devices[index][0] == device->vendorID &&
+				  supported_usb_devices[index][1] == device->productID) {
+			break;
+		}
+	}
+	if (index >= NUM_SUPPORTED_USB_DEVICES) return -1;
+	return index;
 }
 
 
-void plustek_attach_libusb_scanner(libusb_device_t* device) {
-  const char* descriptor_prefix = "plustek:libusb:";
-  int index = plustek_match_libusb_scanner(device);
-  if (index < 0) return; // unsupported
-  scanner_t* scanner = (scanner_t*)malloc(sizeof(scanner_t));
-  scanner->vendor = usb_device_descriptions[index][0];
-  scanner->product = usb_device_descriptions[index][1];
-  scanner->connection = CONNECTION_LIBUSB;
-  scanner->internal_dev_ptr = (void*)device;
-  scanner->lastbutton = 0;
-  scanner->sane_device = (char*)malloc(strlen(device->location) + strlen(descriptor_prefix) + 1);
-  strcpy(scanner->sane_device, descriptor_prefix);
-  strcat(scanner->sane_device, device->location);  
-  scanner->next = plustek_scanners;
-  plustek_scanners = scanner;
+void plustek_attach_libusb_scanner(libusb_device_t* device)
+{
+	const char* descriptor_prefix = "plustek:libusb:";
+	int index = plustek_match_libusb_scanner(device);
+	if (index < 0) return; // unsupported
+	scanner_t* scanner = (scanner_t*)malloc(sizeof(scanner_t));
+	scanner->vendor = usb_device_descriptions[index][0];
+	scanner->product = usb_device_descriptions[index][1];
+	scanner->connection = CONNECTION_LIBUSB;
+	scanner->internal_dev_ptr = (void*)device;
+	scanner->lastbutton = 0;
+	scanner->sane_device = (char*)malloc(strlen(device->location) +
+			strlen(descriptor_prefix) + 1);
+	strcpy(scanner->sane_device, descriptor_prefix);
+	strcat(scanner->sane_device, device->location);
+	scanner->next = plustek_scanners;
+	plustek_scanners = scanner;
 }
 
 
-void plustek_detach_scanners(void) {
-  scanner_t* next;
-  while (plustek_scanners != NULL) {
-    next = plustek_scanners->next;
-    free(plustek_scanners->sane_device);
-    free(plustek_scanners);
-    plustek_scanners = next;
-  }
+void plustek_detach_scanners(void)
+{
+	scanner_t* next;
+	while (plustek_scanners != NULL) {
+		next = plustek_scanners->next;
+		free(plustek_scanners->sane_device);
+		free(plustek_scanners);
+		plustek_scanners = next;
+	}
 }
 
 
-void plustek_scan_devices(libusb_device_t* devices) {
-  int index;
-  libusb_device_t* device = devices;
-  while (device != NULL) {
-    index = plustek_match_libusb_scanner(device);
-    if (index >= 0) plustek_attach_libusb_scanner(device);
-    device = device->next;
-  }
+void plustek_scan_devices(libusb_device_t* devices)
+{
+	int index;
+	libusb_device_t* device = devices;
+	while (device != NULL) {
+		index = plustek_match_libusb_scanner(device);
+		if (index >= 0) plustek_attach_libusb_scanner(device);
+		device = device->next;
+	}
 }
 
 
-int plustek_init_libusb(void) {
-  libusb_device_t* devices;
-  
-  libusb_handle = libusb_init();
-  devices = libusb_get_devices(libusb_handle);
-  plustek_scan_devices(devices);
-  return 0;
+int plustek_init_libusb(void)
+{
+	libusb_device_t* devices;
+
+	libusb_handle = libusb_init();
+	devices = libusb_get_devices(libusb_handle);
+	plustek_scan_devices(devices);
+	return 0;
 }
 
 
-char* scanbtnd_get_backend_name(void) {
-  return backend_name;
+char* scanbtnd_get_backend_name(void)
+{
+	return backend_name;
 }
 
 
-int scanbtnd_init(void) {
-  plustek_scanners = NULL;
-  
-  syslog(LOG_INFO, "plustek-backend: init");
-  return plustek_init_libusb();
+int scanbtnd_init(void)
+{
+	plustek_scanners = NULL;
+
+	syslog(LOG_INFO, "plustek-backend: init");
+	return plustek_init_libusb();
 }
 
 
-int scanbtnd_rescan(void) {
-  libusb_device_t* devices;
+int scanbtnd_rescan(void)
+{
+	libusb_device_t* devices;
 
-  plustek_detach_scanners();
-  plustek_scanners = NULL;
-  libusb_rescan(libusb_handle);
-  devices = libusb_get_devices(libusb_handle);
-  plustek_scan_devices(devices);
-  return 0;
+	plustek_detach_scanners();
+	plustek_scanners = NULL;
+	libusb_rescan(libusb_handle);
+	devices = libusb_get_devices(libusb_handle);
+	plustek_scan_devices(devices);
+	return 0;
 }
 
 
-scanner_t* scanbtnd_get_supported_devices(void) {
-  return plustek_scanners;
+scanner_t* scanbtnd_get_supported_devices(void)
+{
+	return plustek_scanners;
 }
 
 
-int scanbtnd_open(scanner_t* scanner) {  
-  switch (scanner->connection) {
-    case CONNECTION_LIBUSB:
+int scanbtnd_open(scanner_t* scanner)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
       // if devices have been added/removed, return -ENODEV to
       // make scanbuttond update its device list
-      if (libusb_get_changed_device_count() != 0) {
-        return -ENODEV;
-      }
-      return libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
-    break;
-  }
-  return -1;
+			if (libusb_get_changed_device_count() != 0) {
+				return -ENODEV;
+			}
+			return libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
+			break;
+	}
+	return -1;
 }
 
 
-int scanbtnd_close(scanner_t* scanner) {
-  switch (scanner->connection) {
-    case CONNECTION_LIBUSB:
-      return libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
-    break;
-  }
-  return -1;
+int scanbtnd_close(scanner_t* scanner)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			return libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
+			break;
+	}
+	return -1;
 }
 
 
-int plustek_read(scanner_t* scanner, void* buffer, int bytecount) {
-  switch (scanner->connection) {
-    case CONNECTION_LIBUSB:
-      return libusb_read((libusb_device_t*)scanner->internal_dev_ptr, buffer, bytecount);
-    break;
-  }
-  return -1;
+int plustek_read(scanner_t* scanner, void* buffer, int bytecount)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			return libusb_read((libusb_device_t*)scanner->internal_dev_ptr,
+								buffer, bytecount);
+			break;
+	}
+	return -1;
 }
 
 
-int plustek_write(scanner_t* scanner, void* buffer, int bytecount) {
-  switch (scanner->connection) {
-    case CONNECTION_LIBUSB:
-      return libusb_write((libusb_device_t*)scanner->internal_dev_ptr, buffer, bytecount);
-    break;
-  }
-  return -1;
+int plustek_write(scanner_t* scanner, void* buffer, int bytecount)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			return libusb_write((libusb_device_t*)scanner->internal_dev_ptr,
+								 buffer, bytecount);
+			break;
+	}
+	return -1;
 }
 
 
-int scanbtnd_get_button(scanner_t* scanner) {
-  unsigned char bytes[255];
-  int num_bytes;
-  int button_mask = 4;
+int scanbtnd_get_button(scanner_t* scanner)
+{
+	unsigned char bytes[255];
+	int num_bytes;
+	int button_mask = 4;
 
-  /* Note 1: I strongly suspect that the command 0x01 0x69 0x00 0x01 will return
-     a button bitmask. For my Canon N1220U it returns 0x04, which happens to
-     be the bit I have to test against to see if the scanner button was pressed.
-     However, this has to be tested on other scanners to see if this is true. */
-  
-  /* Note 2: This works on my Canon N1220U. Whether this is Canon specific or
-     if it works for all 'plustek usb' type scanners is something I don't know. */
+	/*
+	Note 1: I strongly suspect that the command 0x01 0x69 0x00 0x01 will return
+	a button bitmask. For my Canon N1220U it returns 0x04, which happens to
+	be the bit I have to test against to see if the scanner button was pressed.
+	However, this has to be tested on other scanners to see if this is true.
 
-  /* Note 3: You must have run sane-find-scanner once. Sane apparently initializes 
-     something on the scanner allowing this to work. Otherwise all you get is 0x00. */
-  bytes[0] = 1;
-  bytes[1] = 2;
-  bytes[2] = 0;
-  bytes[3] = 1;
-  
-  num_bytes = plustek_write(scanner, (void*)bytes, 4);
-  if (num_bytes != 4) return 0;
-  num_bytes = plustek_read(scanner, (void*)bytes, 1);
-  if (num_bytes != 1) return 0;
-  return ((bytes[0] & button_mask) == 0) ? 0 : 1;
+	Note 2: This works on my Canon N1220U. Whether this is Canon specific or
+	if it works for all 'plustek usb' type scanners is something I don't know.
+
+	Note 3: You must have run sane-find-scanner once. Sane apparently initializes
+	something on the scanner allowing this to work. Otherwise all you get is 0x00.
+	*/
+
+	bytes[0] = 1;
+	bytes[1] = 2;
+	bytes[2] = 0;
+	bytes[3] = 1;
+
+	num_bytes = plustek_write(scanner, (void*)bytes, 4);
+	if (num_bytes != 4) return 0;
+	num_bytes = plustek_read(scanner, (void*)bytes, 1);
+	if (num_bytes != 1) return 0;
+	return ((bytes[0] & button_mask) == 0) ? 0 : 1;
 }
 
 
-char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
-  return scanner->sane_device;
+char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
+{
+	return scanner->sane_device;
 }
 
 
-int scanbtnd_exit(void) {
-  syslog(LOG_INFO, "plustek-backend: exit");
-  plustek_detach_scanners();
-  libusb_exit(libusb_handle);
-  return 0;
+int scanbtnd_exit(void)
+{
+	syslog(LOG_INFO, "plustek-backend: exit");
+	plustek_detach_scanners();
+	libusb_exit(libusb_handle);
+	return 0;
 }
 

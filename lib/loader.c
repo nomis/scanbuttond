@@ -1,5 +1,5 @@
-// scanbuttond
-// dynamic backend loader
+// loader.h: dynamic backend library loader
+// This file is part of scanbuttond.
 // Copyleft )c( 2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
@@ -25,87 +25,89 @@
 #include <errno.h>
 #include "loader.h"
 
-backend_t* load_backend(const char* filename) {
-  char* error;
-  void* dll_handle = dlopen(filename, RTLD_NOW|RTLD_LOCAL);
-  if (!dll_handle) {
-    syslog(LOG_ERR, "loader: failed to load \"%s\". Error message: \"%s\"",
-      filename, dlerror());
-    return NULL;
-  }
-  dlerror();  // Clear any existing error
-  backend_t* backend = (backend_t*)malloc(sizeof(backend_t));
-  backend->handle = dll_handle;
-  backend->scanbtnd_get_backend_name = dlsym(dll_handle, "scanbtnd_get_backend_name");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_init = dlsym(dll_handle, "scanbtnd_init");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);    
-    return NULL;
-  }
-  backend->scanbtnd_rescan = dlsym(dll_handle, "scanbtnd_rescan");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_get_supported_devices = dlsym(dll_handle, "scanbtnd_get_supported_devices");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_open = dlsym(dll_handle, "scanbtnd_open");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_close = dlsym(dll_handle, "scanbtnd_close");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_get_button = dlsym(dll_handle, "scanbtnd_get_button");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_get_sane_device_descriptor = dlsym(dll_handle, "scanbtnd_get_sane_device_descriptor");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }
-  backend->scanbtnd_exit = dlsym(dll_handle, "scanbtnd_exit");
-  if ((error = dlerror()) != NULL) {
-    syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
-    dlclose(dll_handle);
-    free(backend);
-    return NULL;
-  }  
+backend_t* load_backend(const char* filename)
+{
+	char* error;
+	void* dll_handle = dlopen(filename, RTLD_NOW|RTLD_LOCAL);
+	if (!dll_handle) {
+		syslog(LOG_ERR, "loader: failed to load \"%s\". Error message: \"%s\"",
+			   filename, dlerror());
+		return NULL;
+	}
+	dlerror();  // Clear any existing error
+	backend_t* backend = (backend_t*)malloc(sizeof(backend_t));
+	backend->handle = dll_handle;
+	backend->scanbtnd_get_backend_name = dlsym(dll_handle, "scanbtnd_get_backend_name");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_init = dlsym(dll_handle, "scanbtnd_init");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_rescan = dlsym(dll_handle, "scanbtnd_rescan");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_get_supported_devices = dlsym(dll_handle, "scanbtnd_get_supported_devices");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_open = dlsym(dll_handle, "scanbtnd_open");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_close = dlsym(dll_handle, "scanbtnd_close");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_get_button = dlsym(dll_handle, "scanbtnd_get_button");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_get_sane_device_descriptor = dlsym(dll_handle, "scanbtnd_get_sane_device_descriptor");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
+	backend->scanbtnd_exit = dlsym(dll_handle, "scanbtnd_exit");
+	if ((error = dlerror()) != NULL) {
+		syslog(LOG_ERR, "loader: dlsym failed! Error message \"%s\"", error);
+		dlclose(dll_handle);
+		free(backend);
+		return NULL;
+	}
 
-  return backend;
+	return backend;
 }
 
 
-void unload_backend(backend_t* backend) {
-  dlclose(backend->handle);
-  free(backend);
+void unload_backend(backend_t* backend)
+{
+	dlclose(backend->handle);
+	free(backend);
 }
 

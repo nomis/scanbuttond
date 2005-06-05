@@ -1,5 +1,5 @@
-// scanbuttond
-// dynamic backend loader
+// loader.h: dynamic backend library loader
+// This file is part of scanbuttond.
 // Copyleft )c( 2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
@@ -25,19 +25,18 @@ struct backend;
 typedef struct backend backend_t;
 
 struct backend {
-  char* (*scanbtnd_get_backend_name)(void);
-  int (*scanbtnd_init)(void);
-  int (*scanbtnd_rescan)(void);
-  scanner_t* (*scanbtnd_get_supported_devices)(void);
-  int (*scanbtnd_open)(scanner_t* scanner);
-  int (*scanbtnd_close)(scanner_t* scanner);
-  int (*scanbtnd_get_button)(scanner_t* scanner);
-  char* (*scanbtnd_get_sane_device_descriptor)(scanner_t* scanner);
-  int (*scanbtnd_exit)(void);
-  
-  void* handle;  // handle for dlopen/dlsym/dlclose
-  
-  backend_t* next;
+	char* (*scanbtnd_get_backend_name)(void);
+	int (*scanbtnd_init)(void);
+	int (*scanbtnd_rescan)(void);
+	scanner_t* (*scanbtnd_get_supported_devices)(void);
+	int (*scanbtnd_open)(scanner_t* scanner);
+	int (*scanbtnd_close)(scanner_t* scanner);
+	int (*scanbtnd_get_button)(scanner_t* scanner);
+	char* (*scanbtnd_get_sane_device_descriptor)(scanner_t* scanner);
+	int (*scanbtnd_exit)(void);
+	void* handle;  // handle for dlopen/dlsym/dlclose
+
+	backend_t* next;
 };
 
 backend_t* load_backend(const char* filename);

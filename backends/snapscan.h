@@ -1,4 +1,5 @@
-// Snapscan scanner backend
+// snapscan.h: Snapscan device backend
+// This file is part of scanbuttond.
 // Copyleft )c( 2005 by Bernhard Stiftner
 // Thanks to J. Javier Maestro for sniffing the button codes ;-)
 //

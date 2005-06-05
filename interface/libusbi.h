@@ -1,5 +1,5 @@
-// scanbuttond
-// libusb interface
+// libusbi.h: libusb wrapper
+// This file is part of scanbuttond.
 // Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
@@ -54,7 +54,7 @@ void libusb_rescan(libusb_handle_t* handle);
 
 libusb_device_t* libusb_get_devices(libusb_handle_t* handle);
 
-// returns 0 on success, -EBUSY if the scanner is currently in use, 
+// returns 0 on success, -EBUSY if the scanner is currently in use,
 // or -ENODEV if the scanner does no longer exist
 int libusb_open(libusb_device_t* device);
 
@@ -64,8 +64,8 @@ int libusb_read(libusb_device_t* device, void* buffer, int bytecount);
 
 int libusb_write(libusb_device_t* device, void* buffer, int bytecount);
 
-int libusb_control_msg(libusb_device_t* device, int requesttype, 
-                       int request, int value, int index, void* bytes, int size);
+int libusb_control_msg(libusb_device_t* device, int requesttype,
+					   int request, int value, int index, void* bytes, int size);
 
 void libusb_exit(libusb_handle_t* handle);
 

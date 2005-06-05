@@ -1,4 +1,5 @@
-// scanbuttond - a scanner button daemon for Linux
+// scanbuttond.h: fundamental data types, constants, ...
+// This file is part of scanbuttond.
 // Copyleft )c( 2004-2005 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
@@ -33,9 +34,9 @@ struct scanner {
 	void* internal_dev_ptr;
 	char* sane_device;
 	void* meta_info;
-        int lastbutton;
-	
-        scanner_t* next;
+	int lastbutton;
+
+	scanner_t* next;
 };
 
 char* scanbtnd_get_connection_name(int connection);

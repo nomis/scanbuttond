@@ -18,7 +18,7 @@ Modern scanners usually have several front panel buttons
 which are intended to trigger certain actions like
 copying, faxing or mailing the scanned document.
 This daemon monitors the scanner's buttons and runs a
-shell script whenever one of these buttons has been 
+shell script whenever one of these buttons has been
 pressed. Because it is accessing the scanner directly
 via libusb, there should be no conflicts with SANE
 or other scanner drivers: scanbuttond simply won't touch
@@ -30,7 +30,7 @@ Requirements
 
 Scanner: see "supported scanners" below
 Operating system: Linux (and perhaps other Unix-like systems)
-Connection: USB (using libusb, the scanner kernel module is 
+Connection: USB (using libusb, the scanner kernel module is
             currently unsupported)
 
 
@@ -59,6 +59,9 @@ This will install the following files:
 /usr/local/lib/scanbuttond/libmeta.so
 /usr/local/lib/scanbuttond/libmeta.so.1
 /usr/local/lib/scanbuttond/libmeta.so.1.0
+/usr/local/lib/scanbuttond/libusbi.so
+/usr/local/lib/scanbuttond/libusbi.so.1
+/usr/local/lib/scanbuttond/libusbi.so.1.0
 /etc/scanbuttond/buttonpressed.sh
 /etc/scanbuttond/initscanner.sh
 /etc/scanbuttond/meta.conf
@@ -124,7 +127,7 @@ Supported by the niash backend using libusb connection:
 Note: the plustek, snapscan and niash backends were implemented
 using information gathered by "sniffing" the communication between
 the Windows driver and the scanner, because there is no technical
-documentation available for these devices! This means that there 
+documentation available for these devices! This means that there
 may be some weird issues (e.g. button press events reported twice).
 
 
@@ -135,7 +138,7 @@ Whenever a scanner button has been pressed, scanbuttond
 starts a shell script and passes it the button number and
 the SANE scanner name as command line arguments.
 By default, this shell script is installed as
-/etc/scanbuttond/buttonpressed.sh. 
+/etc/scanbuttond/buttonpressed.sh.
 Please modify it to fit your purposes.
 
 
@@ -148,8 +151,8 @@ by the epson backend do not need special initialization.
 
 Some scanners require a special initialization procedure (firmware
 uploading, for example) before they can be used by scanbuttond.
-Since the scanbuttond backend modules cannot yet handle such 
-operations, the initialization has to be performed by external 
+Since the scanbuttond backend modules cannot yet handle such
+operations, the initialization has to be performed by external
 programs, for example by "scanimage" which is part of SANE.
 Have a look at the script "/etc/scanbuttond/initscanner.sh". This
 script will be executed whenever a new device has to be initialized.
@@ -160,7 +163,7 @@ In most cases, it should be sufficient to put something like
 How to contribute to this project
 ---------------------------------
 
-The development of scanbuttond should not be dependent on one 
+The development of scanbuttond should not be dependent on one
 single person, but a community effort.
 You could help by ...
 
@@ -171,7 +174,7 @@ You could help by ...
  * sending bug reports
  * mailing ideas how to enhance scanbuttond
  * ...
- 
+
 If you want to help, please send me an email (see below).
 
 

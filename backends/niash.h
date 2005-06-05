@@ -1,4 +1,6 @@
-// niash scanner backend
+// niash.h: Niash device backend
+// This file is part of scanbuttond.
+// This file is part of scanbuttond.
 // Copyleft )c( 2005 by Bernhard Stiftner
 // Copyleft )c( 2005 by Dirk Wriedt
 //
