@@ -45,7 +45,7 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Hewlett-Packard", "Scanjet 4300c" },
 };
 
-
+libusb_handle_t* libusb_handle;
 scanner_t* niash_scanners = NULL;
 
 
@@ -108,8 +108,8 @@ void niash_scan_devices(libusb_device_t* devices) {
 int niash_init_libusb(void) {
   libusb_device_t* devices;
   
-  libusb_init();
-  devices = libusb_get_devices();
+  libusb_handle = libusb_init();
+  devices = libusb_get_devices(libusb_handle);
   niash_scan_devices(devices);
   return 0;
 }
@@ -133,8 +133,8 @@ int scanbtnd_rescan(void) {
 
   niash_detach_scanners();
   niash_scanners = NULL;
-  libusb_rescan();
-  devices = libusb_get_devices();
+  libusb_rescan(libusb_handle);
+  devices = libusb_get_devices(libusb_handle);
   niash_scan_devices(devices);
   return 0;
 }
@@ -231,7 +231,7 @@ char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
 int scanbtnd_exit(void) {
   syslog(LOG_INFO, "niash-backend: exit");
   niash_detach_scanners();
-  libusb_exit();
+  libusb_exit(libusb_handle);
   return 0;
 }
 

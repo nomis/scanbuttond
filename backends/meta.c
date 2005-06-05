@@ -32,6 +32,7 @@
 static char* backend_name = "Dynamic Module Loader";
 static char* config_file = "/etc/scanbuttond/meta.conf";
 
+libusb_handle_t* libusb_handle;
 scanner_t* meta_scanners = NULL;
 backend_t* meta_backends = NULL;
 
@@ -142,7 +143,7 @@ int scanbtnd_init(void) {
   meta_backends = NULL;
   
   syslog(LOG_INFO, "meta-backend: init");
-  libusb_init();
+  libusb_handle = libusb_init();
   
   // read config file
   char libdir[MAX_CONFIG_LINE];
@@ -178,8 +179,6 @@ int scanbtnd_init(void) {
 int scanbtnd_rescan(void) {
   backend_t* backend;
   
-  syslog(LOG_DEBUG, "meta: beginning rescan");
-  
   meta_detach_scanners();
   meta_scanners = NULL;
   
@@ -195,8 +194,6 @@ int scanbtnd_rescan(void) {
     backend = backend->next;
   }
   
-  syslog(LOG_DEBUG, "meta: finished rescan");
-  
   return 0;
 }
 
@@ -207,28 +204,11 @@ scanner_t* scanbtnd_get_supported_devices(void) {
 
 
 int scanbtnd_open(scanner_t* scanner) {
-  // TODO: remove debug code!
-  /*
-  int found = 0;
-  scanner_t *dev = meta_scanners;
-  while (dev != NULL) {
-    if (dev == scanner) {
-      found = 1;
-      break;
-    }
-    dev = dev->next;
-  }
-  if (found == 0) {
-    syslog(LOG_WARNING, "meta-backend: attempted to open stale device descriptor!!!");
-    return -1;
-  }
-  */
   // if devices have been added/removed, return -ENODEV to
   // make scanbuttond update its device list
   if (libusb_get_changed_device_count() != 0) {
     return -ENODEV;
   }
-  syslog(LOG_DEBUG, "meta-backend: open"); 
   backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_open(scanner);
@@ -236,7 +216,6 @@ int scanbtnd_open(scanner_t* scanner) {
 
 
 int scanbtnd_close(scanner_t* scanner) {
-  syslog(LOG_DEBUG, "meta-backend: close");
   backend_t* backend = meta_lookup_backend(scanner);
   if (backend == NULL) return -1;
   return backend->scanbtnd_close(scanner);
@@ -261,7 +240,7 @@ int scanbtnd_exit(void) {
   syslog(LOG_INFO, "meta-backend: exit");
   meta_detach_scanners();
   meta_detach_backends();
-  libusb_exit();
+  libusb_exit(libusb_handle);
   return 0;
 }
 

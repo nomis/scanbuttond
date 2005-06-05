@@ -27,18 +27,20 @@
 
 #define TIMEOUT	   	10 * 1000	/* 10 seconds */
 
-libusb_device_t* usb_devices = NULL;
 int invocation_count = 0;
 
 
-int libusb_init(void) {
-  syslog(LOG_INFO, "libusbi: libusb_init, invocation counter=%d", invocation_count);
+libusb_handle_t* libusb_init(void) {
+  libusb_handle_t* handle;
   invocation_count++;
-  if (invocation_count != 1) return 0;
-  syslog(LOG_INFO, "libusbi: initializing...");
-  usb_init();
-  libusb_rescan();
-  return 0;
+  if (invocation_count == 1) {
+    syslog(LOG_INFO, "libusbi: initializing...");
+    usb_init();
+  }
+  handle = (libusb_handle_t*)malloc(sizeof(libusb_handle_t));  
+  handle->devices = NULL;
+  libusb_rescan(handle);
+  return handle;
 }
 
 
@@ -127,7 +129,7 @@ int libusb_search_out_endpoint(struct usb_device* device) {
 }
 
 
-void libusb_attach_device(struct usb_device* device) {
+void libusb_attach_device(struct usb_device* device, libusb_handle_t* handle) {
   libusb_device_t* libusb_device = (libusb_device_t*)malloc(sizeof(libusb_device_t));
   libusb_device->vendorID = device->descriptor.idVendor;
   libusb_device->productID = device->descriptor.idProduct;
@@ -142,64 +144,60 @@ void libusb_attach_device(struct usb_device* device) {
   libusb_device->handle = NULL;
   libusb_device->interface = libusb_search_interface(device);
   if (libusb_device->interface < 0) {
-    syslog(LOG_ERR, "libusbi: no valid interface found for device %s", libusb_device->location);
+    //syslog(LOG_ERR, "libusbi: no valid interface found for device %s", libusb_device->location);
     free(libusb_device->location);
     free(libusb_device);
     return;
   }
   libusb_device->out_endpoint = libusb_search_out_endpoint(device);
   if (libusb_device->out_endpoint < 0) {
-    syslog(LOG_ERR, "libusbi: no valid outbound endpoint found for device %s", libusb_device->location);
+    //syslog(LOG_ERR, "libusbi: no valid outbound endpoint found for device %s", libusb_device->location);
     free(libusb_device->location);
     free(libusb_device);
     return;
   }  
   libusb_device->in_endpoint = libusb_search_in_endpoint(device);
   if (libusb_device->in_endpoint < 0) {
-    syslog(LOG_ERR, "libusbi: no valid inbound endpoint found for device %s", libusb_device->location);
+    //syslog(LOG_ERR, "libusbi: no valid inbound endpoint found for device %s", libusb_device->location);
     free(libusb_device->location);
     free(libusb_device);
     return;
   }
-  libusb_device->next = usb_devices;
-  usb_devices = libusb_device;
+  libusb_device->next = handle->devices;
+  handle->devices = libusb_device;
 }
 
 
-void libusb_detach_devices(void) {
+void libusb_detach_devices(libusb_handle_t* handle) {
   libusb_device_t* next;
-  while (usb_devices != NULL) {
-    next = usb_devices->next;
-    free(usb_devices->location);
-    free(usb_devices);
-    usb_devices = next;
+  while (handle->devices != NULL) {
+    next = handle->devices->next;
+    free(handle->devices->location);
+    free(handle->devices);
+    handle->devices = next;
   }
 }
 
 
-void libusb_rescan(void) {  
+void libusb_rescan(libusb_handle_t* handle) {  
   struct usb_bus *bus;
   struct usb_device *device;
-  
-  syslog(LOG_DEBUG, "libusbi: rescanning usb devices...");
 
-  libusb_detach_devices();
+  libusb_detach_devices(handle);
     
   usb_find_busses();
   usb_find_devices();
-  usb_devices = NULL;
+  handle->devices = NULL;
   
   bus = usb_busses;
   while (bus != NULL) {
     device = bus->devices;
     while (device != NULL) {
-      libusb_attach_device(device);
+      libusb_attach_device(device, handle);
       device = device->next;
     }
     bus = bus->next;
   }
-  
-  syslog(LOG_DEBUG, "libusbi: rescan complete");
   
 }
 
@@ -210,18 +208,16 @@ int libusb_get_changed_device_count(void) {
 }  
 
 
-libusb_device_t* libusb_get_devices(void) {
-  return usb_devices;
+libusb_device_t* libusb_get_devices(libusb_handle_t* handle) {
+  return handle->devices;
 }
 
 
 int libusb_open(libusb_device_t* device) {
   int result;
   
-  if (!device->device)
+  if (!device || !device->device)
     return -ENODEV;
-  
-  syslog(LOG_DEBUG, "libusbi: opening device %s", device->location);
   
   device->handle = usb_open(device->device);
   if (device->handle == NULL) {
@@ -229,17 +225,14 @@ int libusb_open(libusb_device_t* device) {
     return -ENODEV;
   }
   
-  syslog(LOG_DEBUG, "libusbi: claiming interface...");
-  
   // Calling usb_set_configuration should not be necessary. It is even considered harmful, since
   // it disturbs other processes which are currently communicating with the scanner!
-  // usb_set_configuration(scanner->handle,
-  //   usb_device(scanner->handle)->config[0].bConfigurationValue);
+  // usb_set_configuration(device->handle,
+  //   usb_device(device->handle)->config[0].bConfigurationValue);
    
   result = usb_claim_interface(device->handle, device->interface);
   switch (result) {
     case 0:
-      syslog(LOG_DEBUG, "libusbi: usb_open completed");
       return 0;
     case -ENOMEM:
       syslog(LOG_ERR, "libusbi: could not claim interface for device %s. (ENOMEM)", device->location);
@@ -303,12 +296,11 @@ int libusb_control_msg(libusb_device_t* device, int requesttype, int request, in
 }
 
 
-int libusb_exit(void) {
-  syslog(LOG_INFO, "libusbi: libusb_exit, invocation counter=%d", invocation_count);
+void libusb_exit(libusb_handle_t* handle) {
   invocation_count--;
-  if (invocation_count != 0) return 0;
-  syslog(LOG_INFO, "libusbi: shutting down...");
-  libusb_detach_devices();
-  return 0;
+  if (invocation_count == 0)
+    syslog(LOG_INFO, "libusbi: shutting down...");
+  libusb_detach_devices(handle);
+  free(handle);
 }
 

@@ -37,13 +37,22 @@ struct libusb_device {
 	libusb_device_t* next;
 };
 
-int libusb_init(void);
+struct libusb_handle;
+typedef struct libusb_handle libusb_handle_t;
 
+struct libusb_handle {
+	libusb_device_t* devices;
+	// rescanning info, timestamps???
+};
+
+libusb_handle_t* libusb_init(void);
+
+// GLOBAL number of changed devices (does not require a handle!)
 int libusb_get_changed_device_count(void);
 
-void libusb_rescan(void);
+void libusb_rescan(libusb_handle_t* handle);
 
-libusb_device_t* libusb_get_devices(void);
+libusb_device_t* libusb_get_devices(libusb_handle_t* handle);
 
 // returns 0 on success, -EBUSY if the scanner is currently in use, 
 // or -ENODEV if the scanner does no longer exist
@@ -58,6 +67,6 @@ int libusb_write(libusb_device_t* device, void* buffer, int bytecount);
 int libusb_control_msg(libusb_device_t* device, int requesttype, 
                        int request, int value, int index, void* bytes, int size);
 
-int libusb_exit(void);
+void libusb_exit(libusb_handle_t* handle);
 
 #endif

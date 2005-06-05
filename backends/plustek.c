@@ -42,7 +42,7 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Canon", "CanonScan N650U" }
 };
 
-
+libusb_handle_t* libusb_handle;
 scanner_t* plustek_scanners = NULL;
 
 
@@ -104,8 +104,8 @@ void plustek_scan_devices(libusb_device_t* devices) {
 int plustek_init_libusb(void) {
   libusb_device_t* devices;
   
-  libusb_init();
-  devices = libusb_get_devices();
+  libusb_handle = libusb_init();
+  devices = libusb_get_devices(libusb_handle);
   plustek_scan_devices(devices);
   return 0;
 }
@@ -129,8 +129,8 @@ int scanbtnd_rescan(void) {
 
   plustek_detach_scanners();
   plustek_scanners = NULL;
-  libusb_rescan();
-  devices = libusb_get_devices();
+  libusb_rescan(libusb_handle);
+  devices = libusb_get_devices(libusb_handle);
   plustek_scan_devices(devices);
   return 0;
 }
@@ -222,7 +222,7 @@ char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
 int scanbtnd_exit(void) {
   syslog(LOG_INFO, "plustek-backend: exit");
   plustek_detach_scanners();
-  libusb_exit();
+  libusb_exit(libusb_handle);
   return 0;
 }
 

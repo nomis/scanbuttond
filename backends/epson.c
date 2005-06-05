@@ -68,7 +68,7 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Epson", "Stylus CX3200"}
 };
 
-
+libusb_handle_t* libusb_handle;
 scanner_t* epson_scanners = NULL;
 
 
@@ -121,7 +121,8 @@ void epson_scan_devices(libusb_device_t* devices) {
   libusb_device_t* device = devices;
   while (device != NULL) {
     index = epson_match_libusb_scanner(device);
-    if (index >= 0) epson_attach_libusb_scanner(device);
+    if (index >= 0) 
+      epson_attach_libusb_scanner(device);
     device = device->next;
   }
 }
@@ -130,8 +131,8 @@ void epson_scan_devices(libusb_device_t* devices) {
 int epson_init_libusb(void) {
   libusb_device_t* devices;
   
-  libusb_init();
-  devices = libusb_get_devices();
+  libusb_handle = libusb_init();
+  devices = libusb_get_devices(libusb_handle);
   epson_scan_devices(devices);
   return 0;
 }
@@ -153,13 +154,11 @@ int scanbtnd_init(void) {
 int scanbtnd_rescan(void) {
   libusb_device_t *devices;
   
-  syslog(LOG_DEBUG, "epson-backend: rescanning");
   epson_detach_scanners();
   epson_scanners = NULL;
-  libusb_rescan();
-  devices = libusb_get_devices();
+  libusb_rescan(libusb_handle);
+  devices = libusb_get_devices(libusb_handle);
   epson_scan_devices(devices);
-  syslog(LOG_DEBUG, "epson-backend: rescan complete");
   return 0;
 }
 
@@ -170,23 +169,6 @@ scanner_t* scanbtnd_get_supported_devices(void) {
 
 
 int scanbtnd_open(scanner_t* scanner) {  
-  // TODO: remove debug code!  
-  syslog(LOG_DEBUG, "epson-backend: open %s", scanner->sane_device);
-  /*
-  int found = 0;
-  scanner_t *dev = epson_scanners;
-  while (dev != NULL) {
-    if (dev->internal_dev_ptr == scanner->internal_dev_ptr) {
-      found = 1;
-      break;
-    }
-    dev = dev->next;
-  }
-  if (found == 0) {
-    syslog(LOG_WARNING, "epson-backend: attempted to open stale device descriptor!!!");
-    return -1;
-  }
-  */
   switch (scanner->connection) {
     case CONNECTION_LIBUSB:
       // if devices have been added/removed, return -ENODEV to
@@ -259,7 +241,7 @@ char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
 int scanbtnd_exit(void) {
   syslog(LOG_INFO, "epson-backend: exit");
   epson_detach_scanners();
-  libusb_exit();
+  libusb_exit(libusb_handle);
   return 0;
 }
 

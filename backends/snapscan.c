@@ -41,7 +41,7 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Epson", "Perfection 1670"}
 };
 
-
+libusb_handle_t* libusb_handle;
 scanner_t* snapscan_scanners = NULL;
 
 
@@ -103,8 +103,8 @@ void snapscan_scan_devices(libusb_device_t* devices) {
 int snapscan_init_libusb(void) {
   libusb_device_t* devices;
   
-  libusb_init();
-  devices = libusb_get_devices();
+  libusb_handle = libusb_init();
+  devices = libusb_get_devices(libusb_handle);
   snapscan_scan_devices(devices);
   return 0;
 }
@@ -128,8 +128,8 @@ int scanbtnd_rescan(void) {
   
   snapscan_detach_scanners();
   snapscan_scanners = NULL;
-  libusb_rescan();
-  devices = libusb_get_devices();
+  libusb_rescan(libusb_handle);
+  devices = libusb_get_devices(libusb_handle);
   snapscan_scan_devices(devices);
   return 0;
 }
@@ -227,7 +227,7 @@ char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner) {
 int scanbtnd_exit(void) {
   syslog(LOG_INFO, "snapscan-backend: exit");
   snapscan_detach_scanners();
-  libusb_exit();
+  libusb_exit(libusb_handle);
   return 0;
 }
 
