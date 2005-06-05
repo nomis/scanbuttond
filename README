@@ -107,6 +107,7 @@ Supported by the epson backend using libusb connection:
 Supported by the plustek backend using libusb connection:
 * Canon CanoScan N1220U (expected to work)
 * Canon CanoScan D660U (expected to work)
+* Canon CanoScan N650U (expected to work)
 
 Supported by the snapscan backend using libusb connection:
 * Epson Perfection 2480 (expected to work)
