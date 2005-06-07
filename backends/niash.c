@@ -122,7 +122,7 @@ int niash_init_libusb(void)
 }
 
 
-char* scanbtnd_get_backend_name(void)
+const char* scanbtnd_get_backend_name(void)
 {
 	return backend_name;
 }
@@ -150,7 +150,7 @@ int scanbtnd_rescan(void)
 }
 
 
-scanner_t* scanbtnd_get_supported_devices(void)
+const scanner_t* scanbtnd_get_supported_devices(void)
 {
 	return niash_scanners;
 }
@@ -246,7 +246,7 @@ int scanbtnd_get_button(scanner_t* scanner)
 }
 
 
-char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
+const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 {
 	return scanner->sane_device;
 }

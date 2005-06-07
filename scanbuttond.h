@@ -19,6 +19,15 @@
 #ifndef SCANBUTTOND_H_INCLUDED
 #define SCANBUTTOND_H_INCLUDED
 
+/**
+ * \file scanbuttond.h
+ * \brief Fundamental data types, macros, functions, ...
+ *
+ * This header defines some fundamental things which are used
+ * throughout the whole project.
+ */
+
+
 // connection types
 #define NUM_CONNECTIONS		2
 #define CONNECTION_NONE		0
@@ -35,7 +44,9 @@ struct scanner {
 	char* sane_device;
 	void* meta_info;
 	int lastbutton;
-
+	int is_open;
+	int can_turn_off_lamp;
+	
 	scanner_t* next;
 };
 

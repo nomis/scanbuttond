@@ -21,4 +21,6 @@
 
 #include "backend.h"
 
+void epson_turn_off_lamp(scanner_t *scanner);
+
 #endif

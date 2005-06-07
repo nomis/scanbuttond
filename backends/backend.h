@@ -21,36 +21,96 @@
 
 #include "scanbuttond.h"
 
-// Gets the name of this backend
-char* scanbtnd_get_backend_name(void);
+/**
+ * \file backend.h
+ * \brief Backend function specification.
+ *
+ * This file specifies which functions a scanbuttond backend has to
+ * provide and how it is supposed to interact with with the rest
+ * of the system.
+ */
 
-// Initialize backend, search for supported devices
+/**
+ * Gets the name of this backend.
+ * \return the backend name
+ */
+const char* scanbtnd_get_backend_name(void);
+
+/**
+ * Initializes the backend.
+ * This function makes the backend ready to operate and searches for supported
+ * devices (see scanbtnd_get_supported_devices()).
+ * \return 0 if successful, <0 otherwise
+ */
 int scanbtnd_init(void);
 
-// Rescan device list, detect new supported devices
+/**
+ * Refreshes the list of supported devices.
+ * After this function has been called, scanbtnd_get_supported_devices() 
+ * should only return devices which are currently present on this system.
+ * \return 0 if successful, <0 otherwise
+ */
 int scanbtnd_rescan(void);
 
-// Returns a linked list of scanner devices which are supported by this backend
-scanner_t* scanbtnd_get_supported_devices(void);
+/**
+ * Returns a list of devices which are currently driven by this backend.
+ * The devices are stored in a single-linked list.
+ * Note that the device list does not automagically refresh after pluggin in or
+ * unplugging a device. You have to explicitly call scanbtnd_rescan() to do
+ * that.
+ * \return a linked list of supported scanner devices
+ */
+const scanner_t* scanbtnd_get_supported_devices(void);
 
-// Opens the given scanner. WARNING! Access to the scanner will be blocked for
-// other applications (like SANE) until you call scanbtnd_close(,,,),
+/**
+ * Opens the given scanner device.
+ * This function must be called before using scanbtnd_get_button().
+ * After calling this function, it is usually not possible for another process
+ * to access the scanner until scanbtnd_close() is called.
+ * \param scanner the scanner device to be opened
+ * \return 0 if successful, <0 otherwise
+ * \retval -ENODEV if the device is no longer present (or the device list has to 
+ *         be refreshed). In this case, call scanbtnd_rescan() and try again.
+ * \retval -EBUSY if the device is currently used by another process.
+ * \retval -EINVAL if the device is already open
+ * \retval -ENOSYS if there is no connection method to communicate with the device
+ */
 int scanbtnd_open(scanner_t* scanner);
 
-// Closes the given scanner device. After that, other applications may access the
-// scanner again.
+/**
+ * Closes the given scanner device.
+ * This function must be called when you've finished querying the scanner button
+ * status using scanbtnd_get_button().
+ * After calling this function, other processes may access the device again.
+ * \param scanner the scanner device to be closed
+ * \return 0 if successful, <0 otherwise
+ * \retval -EINVAL if the device is already closed
+ * \retval -ENOSYS if there is no connection method to communicate with the device
+ */
 int scanbtnd_close(scanner_t* scanner);
 
-// Query the given scanner's button status. Returns the number of the pressed button
-// or 0 if no button is currently pressed.
+/**
+ * Queries the scanner's button status.
+ * \param scanner the scanner device
+ * \return the number of the currently pressed button, 0 if no button is currently
+ * pressed, or <0 if there was an error.
+ * \retval -EINVAL if the scanner device has not been opened before
+ */
 int scanbtnd_get_button(scanner_t* scanner);
 
-// Get a valid SANE device name for this scanner, e.g. 'epson:libusb:003:017'.
-// Returns NULL if such a device name cannot be determined.
-// The memory for the string is managed by the backend and should not be free'd.
-char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner);
+/**
+ * Gets the SANE device name of this scanner.
+ * The returned string should look like "epson:libusb:003:017".
+ * \param scanner the scanner device
+ * \return the SANE device name, or NULL if the SANE device name cannot be determined.
+ */
+const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner);
 
-// Clean up internal data structures, free some memory
+/**
+ * Shuts down this backend.
+ * Cleans up some internal data structures and frees some memory.
+ * \return 0 if successful, <0 otherwise
+ */
 int scanbtnd_exit(void);
 
 #endif

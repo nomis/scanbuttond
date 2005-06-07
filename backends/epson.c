@@ -104,6 +104,7 @@ void epson_attach_libusb_scanner(libusb_device_t* device)
 	scanner->sane_device = (char*)malloc(strlen(device->location) + strlen(descriptor_prefix) + 1);
 	strcpy(scanner->sane_device, descriptor_prefix);
 	strcat(scanner->sane_device, device->location);
+	scanner->can_turn_off_lamp = -1; // undetermined!
 	scanner->next = epson_scanners;
 	epson_scanners = scanner;
 }
@@ -145,7 +146,7 @@ int epson_init_libusb(void)
 }
 
 
-char* scanbtnd_get_backend_name(void)
+const char* scanbtnd_get_backend_name(void)
 {
 	return backend_name;
 }
@@ -173,7 +174,7 @@ int scanbtnd_rescan(void)
 }
 
 
-scanner_t* scanbtnd_get_supported_devices(void)
+const scanner_t* scanbtnd_get_supported_devices(void)
 {
 	return epson_scanners;
 }
@@ -181,28 +182,38 @@ scanner_t* scanbtnd_get_supported_devices(void)
 
 int scanbtnd_open(scanner_t* scanner)
 {
+	int result = -ENOSYS;
+	if (scanner->is_open)
+		return -EINVAL;
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
 			// if devices have been added/removed, return -ENODEV to
 			// make scanbuttond update its device list
-			if (libusb_get_changed_device_count() != 0) {
+			if (libusb_get_changed_device_count() != 0)
 				return -ENODEV;
-			}
-			return libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
+			result = libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
 			break;
 	}
-	return -1;
+	if (result == 0)
+		scanner->is_open = 1;
+	return result;
 }
 
 
 int scanbtnd_close(scanner_t* scanner)
 {
+	int result = -ENOSYS;
+	if (!scanner->is_open)
+		return -EINVAL;
+	epson_turn_off_lamp(scanner);
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
-			return libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
+			result = libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
 			break;
 	}
-	return -1;
+	if (result == 0)
+		scanner->is_open = 0;
+	return result;
 }
 
 
@@ -228,6 +239,70 @@ int epson_write(scanner_t* scanner, void* buffer, int bytecount)
 }
 
 
+void epson_turn_off_lamp(scanner_t* scanner)
+{
+	int bytes[255];
+	int params[64];
+	int num_bytes;
+	int rcv_len;
+	
+	switch (scanner->can_turn_off_lamp) {
+		case 0: // unsupported
+			return;
+		case -1: // undetermined
+			bytes[0] = 28;
+			bytes[1] = 73;
+			bytes[2] = 0;
+			num_bytes = epson_write(scanner, (void*)bytes, 2);
+			if (num_bytes != 2) return;
+			num_bytes = epson_read(scanner, (void*)bytes, 80);
+			if (num_bytes != 80) return;
+			if ((bytes[44] & 0x80) == 0x80) {
+				scanner->can_turn_off_lamp = 1;
+			} else {
+				scanner->can_turn_off_lamp = 0;
+				return;
+			}				
+	}
+	if (!scanner->can_turn_off_lamp) 
+		return;
+	
+	syslog(LOG_INFO, "trying to turn off lamp...");
+	
+	// request scanning parameters
+	bytes[0] = 28;
+	bytes[1] = 83;
+	bytes[2] = 0;
+	num_bytes = epson_write(scanner, (void*)bytes, 2);
+	if (num_bytes != 2) return;
+	num_bytes = epson_read(scanner, (void*)bytes, 4);
+	if (num_bytes != 4) return;
+	rcv_len = bytes[3] << 8 | bytes[2];
+	num_bytes = epson_read(scanner, (void*)bytes, rcv_len);
+	if (num_bytes != rcv_len) return;
+	memcpy(params, bytes, 64);
+	
+	// set lamp state to 0
+	syslog(LOG_INFO, "lamp state before change: %d", params[38]);
+	params[38] = 0;
+	
+	// set scanning parameters
+	bytes[0] = 28;
+	bytes[1] = 87;
+	bytes[2] = 0;
+	num_bytes = epson_write(scanner, (void*)bytes, 2);
+	if (num_bytes != 2) return;
+	num_bytes = epson_read(scanner, (void*)bytes, 1);
+	if (num_bytes != 1) return;
+	// TODO: check if we've received ACK?!?
+	num_bytes = epson_write(scanner, (void*)params, 64);
+	if (num_bytes != 64) return;
+	num_bytes = epson_read(scanner, (void*)bytes, 1);
+	if (num_bytes != 1) return;
+	// TODO: check if we've received ACK?!?
+}
+
+
 int scanbtnd_get_button(scanner_t* scanner)
 {
 	unsigned char bytes[255];
@@ -237,6 +312,9 @@ int scanbtnd_get_button(scanner_t* scanner)
 	bytes[0] = ESC;
 	bytes[1] = '!';
 	bytes[2] = '\0';
+
+	if (!scanner->is_open)
+		return -EINVAL;
 
 	num_bytes = epson_write(scanner, (void*)bytes, 2);
 	if (num_bytes != 2) return 0;
@@ -249,7 +327,7 @@ int scanbtnd_get_button(scanner_t* scanner)
 }
 
 
-char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
+const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 {
 	return scanner->sane_device;
 }

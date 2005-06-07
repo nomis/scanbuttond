@@ -39,7 +39,7 @@ scanner_t* meta_scanners = NULL;
 backend_t* meta_backends = NULL;
 
 
-char* scanbtnd_get_backend_name(void)
+const char* scanbtnd_get_backend_name(void)
 {
 	return backend_name;
 }
@@ -213,7 +213,7 @@ int scanbtnd_rescan(void)
 }
 
 
-scanner_t* scanbtnd_get_supported_devices(void)
+const scanner_t* scanbtnd_get_supported_devices(void)
 {
 	return meta_scanners;
 }
@@ -248,7 +248,7 @@ int scanbtnd_get_button(scanner_t* scanner)
 }
 
 
-char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
+const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 {
 	backend_t* backend = meta_lookup_backend(scanner);
 	if (backend == NULL) return NULL;

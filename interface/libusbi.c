@@ -311,7 +311,8 @@ int libusb_control_msg(libusb_device_t* device, int requesttype, int request,
 	int num_bytes = usb_control_msg(device->handle, requesttype, request, value,
 									index, bytes, size, TIMEOUT);
 	if (num_bytes<0) {
-		usb_clear_halt(device->handle, device->in_endpoint);
+		// Doesn't seem to be needed... (bs, Jun 07 2005)
+		// usb_clear_halt(device->handle, device->in_endpoint);
 		return 0;
 	}
 	return num_bytes;
