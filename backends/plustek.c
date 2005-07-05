@@ -244,8 +244,9 @@ int scanbtnd_get_button(scanner_t* scanner)
 	num_bytes = plustek_read(scanner, (void*)bytes, 1);
 	if (num_bytes != 1) return 0;
 	
-	// by bst: does this really work? this is the first attempt to
-	// get rid of the hardcoded button bitmask...
+	// by bst: This is my first attempt to get rid of the 
+	// hardcoded button bitmask. Note that I do not own any device
+	// supported by this backend, so this code is based on guessing.
 	switch (scanner->num_buttons) {
 	case 1:
 		if ((bytes[0] & 0x04) != 0) button = 1;
