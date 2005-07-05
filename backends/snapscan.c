@@ -31,9 +31,9 @@ static char* backend_name = "Snapscan USB";
 
 #define NUM_SUPPORTED_USB_DEVICES 2
 
-static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][2] = {
-	{ 0x04b8, 0x0121 },	// Epson Perfection 2480
-	{ 0x04b8, 0x011f }	// Epson Perfection 1670
+static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
+	{ 0x04b8, 0x0121, 4 },	// Epson Perfection 2480
+	{ 0x04b8, 0x011f, 4 }	// Epson Perfection 1670
 };
 
 // TODO: check if this backend really works on the Epson 2580 too...
@@ -77,6 +77,7 @@ void snapscan_attach_libusb_scanner(libusb_device_t* device)
 	scanner->sane_device = (char*)malloc(strlen(device->location) + strlen(descriptor_prefix) + 1);
 	strcpy(scanner->sane_device, descriptor_prefix);
 	strcat(scanner->sane_device, device->location);
+	scanner->num_buttons = supported_usb_devices[index][2];
 	scanner->next = snapscan_scanners;
 	snapscan_scanners = scanner;
 }

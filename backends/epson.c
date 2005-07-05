@@ -35,21 +35,23 @@ static char* backend_name = "Epson USB";
 
 #define NUM_SUPPORTED_USB_DEVICES 14
 
-static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][2] = {
-	{ 0x04B8, 0x0107 },	// Epson Expression 1600
-	{ 0x04B8, 0x010E },	// Epson Expression 1680
-	{ 0x04B8, 0x0103 },	// Epson Perfection 610
-	{ 0x04B8, 0x0101 },	// Epson Perfection 636U
-	{ 0x04B8, 0x010C },	// Epson Perfection 640
-	{ 0x04B8, 0x0104 },	// Epson Perfection 1200U
-	{ 0x04B8, 0x010B },	// Epson Perfection 1240
-	{ 0x04B8, 0x010A },	// Epson Perfection 1640
-	{ 0x04B8, 0x0110 },	// Epson Perfection 1650
-	{ 0x04B8, 0x011E },	// Epson Perfection 1660
-	{ 0x04B8, 0x011B },	// Epson Perfection 2400
-	{ 0x04B8, 0x0112 },	// Epson Perfection 2450
-	{ 0x04B8, 0x011C },	// Epson Perfection 3200
-	{ 0x04B8, 0x0802 }	// Epson CX3200
+static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
+	// vendor, product, num_buttons
+	{ 0x04B8, 0x0107, 1 },	// Epson Expression 1600
+	{ 0x04B8, 0x010E, 1 },	// Epson Expression 1680
+	{ 0x04B8, 0x0103, 1 },	// Epson Perfection 610
+	{ 0x04B8, 0x0101, 3 },	// Epson Perfection 636U
+	{ 0x04B8, 0x010C, 3 },	// Epson Perfection 640
+	{ 0x04B8, 0x0104, 1 },	// Epson Perfection 1200U
+	{ 0x04B8, 0x010B, 3 },	// Epson Perfection 1240
+	{ 0x04B8, 0x010A, 1 },	// Epson Perfection 1640
+	{ 0x04B8, 0x0110, 4 },	// Epson Perfection 1650
+	{ 0x04B8, 0x011E, 4 },	// Epson Perfection 1660
+	{ 0x04B8, 0x011B, 4 },	// Epson Perfection 2400
+	{ 0x04B8, 0x0112, 1 },	// Epson Perfection 2450
+	{ 0x04B8, 0x011C, 1 },	// Epson Perfection 3200
+	{ 0x04B8, 0x0802, 1 }	// Epson CX3200 (note: is the button number
+				// really correct?)
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
@@ -104,7 +106,7 @@ void epson_attach_libusb_scanner(libusb_device_t* device)
 	scanner->sane_device = (char*)malloc(strlen(device->location) + strlen(descriptor_prefix) + 1);
 	strcpy(scanner->sane_device, descriptor_prefix);
 	strcat(scanner->sane_device, device->location);
-	scanner->can_turn_off_lamp = -1; // undetermined!
+	scanner->num_buttons = supported_usb_devices[index][2];
 	scanner->next = epson_scanners;
 	epson_scanners = scanner;
 }
@@ -205,7 +207,6 @@ int scanbtnd_close(scanner_t* scanner)
 	int result = -ENOSYS;
 	if (!scanner->is_open)
 		return -EINVAL;
-	epson_turn_off_lamp(scanner);
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
 			result = libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
@@ -238,7 +239,7 @@ int epson_write(scanner_t* scanner, void* buffer, int bytecount)
 	return -1;
 }
 
-
+/*
 void epson_turn_off_lamp(scanner_t* scanner)
 {
 	int bytes[255];
@@ -301,7 +302,7 @@ void epson_turn_off_lamp(scanner_t* scanner)
 	if (num_bytes != 1) return;
 	// TODO: check if we've received ACK?!?
 }
-
+*/
 
 int scanbtnd_get_button(scanner_t* scanner)
 {

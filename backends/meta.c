@@ -55,6 +55,7 @@ void meta_attach_scanner(scanner_t* scanner, backend_t* backend)
 	dev->sane_device = scanner->sane_device;
 	dev->meta_info = (void*)backend;
 	dev->lastbutton = 0;
+	dev->num_buttons = scanner->num_buttons;
 	dev->next = meta_scanners;
 	meta_scanners = dev;
 	syslog(LOG_INFO, "meta-backend: attached scanner \"%s %s\"",

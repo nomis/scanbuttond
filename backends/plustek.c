@@ -29,18 +29,21 @@
 
 static char* backend_name = "Plustek USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 3
+#define NUM_SUPPORTED_USB_DEVICES 4
 
-static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][2] = {
-	{ 0x04a9, 0x2207 },	// CanoScan N1220U
-	{ 0x04a9, 0x2208 },	// CanoScan CanoScan D660U
-	{ 0x04a9, 0x2206 }      // CanonScan N650U
+static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
+	// vendor, product, num_buttons
+	{ 0x04a9, 0x2207, 1 },	// CanoScan N1220U
+	{ 0x04a9, 0x2208, 1 },	// CanoScan CanoScan D660U
+	{ 0x04a9, 0x2206, 1 },	// CanonScan N650U
+	{ 0x04a9, 0x220d, 3 }	// CanonScan LIDE 20
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Canon", "CanoScan N1220U" },
 	{ "Canon", "CanoScan D660U"  },
-	{ "Canon", "CanonScan N650U" }
+	{ "Canon", "CanonScan N650U" },
+	{ "Canon", "CanonScan LIDE 20" }
 };
 
 
@@ -79,6 +82,7 @@ void plustek_attach_libusb_scanner(libusb_device_t* device)
 			strlen(descriptor_prefix) + 1);
 	strcpy(scanner->sane_device, descriptor_prefix);
 	strcat(scanner->sane_device, device->location);
+	scanner->num_buttons = supported_usb_devices[index][2];
 	scanner->next = plustek_scanners;
 	plustek_scanners = scanner;
 }
@@ -206,23 +210,30 @@ int plustek_write(scanner_t* scanner, void* buffer, int bytecount)
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
-	unsigned char bytes[255];
-	int num_bytes;
-	int button_mask = 4;
-
 	/*
 	Note 1: I strongly suspect that the command 0x01 0x69 0x00 0x01 will return
 	a button bitmask. For my Canon N1220U it returns 0x04, which happens to
 	be the bit I have to test against to see if the scanner button was pressed.
 	However, this has to be tested on other scanners to see if this is true.
-
+	
 	Note 2: This works on my Canon N1220U. Whether this is Canon specific or
 	if it works for all 'plustek usb' type scanners is something I don't know.
 
 	Note 3: You must have run sane-find-scanner once. Sane apparently initializes
 	something on the scanner allowing this to work. Otherwise all you get is 0x00.
+	
+	Note 4: by /cbx
+	On my CanoScan LIDE20, the default value is $62 and the bits for the
+	buttons are as follows:
+	Scan: $72 ==> 0x10
+	Copy: $6a ==> 0x08
+	Mail: $66 ==> 0x04
 	*/
 
+	unsigned char bytes[255];
+	int num_bytes;
+	int button = 0;
+	
 	bytes[0] = 1;
 	bytes[1] = 2;
 	bytes[2] = 0;
@@ -232,7 +243,24 @@ int scanbtnd_get_button(scanner_t* scanner)
 	if (num_bytes != 4) return 0;
 	num_bytes = plustek_read(scanner, (void*)bytes, 1);
 	if (num_bytes != 1) return 0;
-	return ((bytes[0] & button_mask) == 0) ? 0 : 1;
+	
+	// by bst: does this really work? this is the first attempt to
+	// get rid of the hardcoded button bitmask...
+	switch (scanner->num_buttons) {
+	case 1:
+		if ((bytes[0] & 0x04) != 0) button = 1;
+		break;
+	case 2:
+		if ((bytes[0] & 0x08) != 0) button = 1;
+		if ((bytes[0] & 0x04) != 0) button = 2;
+		break;
+	case 3: 
+		if ((bytes[0] & 0x10) != 0) button = 1;
+		if ((bytes[0] & 0x08) != 0) button = 2;
+		if ((bytes[0] & 0x04) != 0) button = 3;
+		break;
+	}
+	return button;
 }
 
 

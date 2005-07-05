@@ -45,7 +45,7 @@ struct scanner {
 	void* meta_info;
 	int lastbutton;
 	int is_open;
-	int can_turn_off_lamp;
+	int num_buttons;
 	
 	scanner_t* next;
 };
