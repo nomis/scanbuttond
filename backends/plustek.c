@@ -215,6 +215,8 @@ int scanbtnd_get_button(scanner_t* scanner)
 	a button bitmask. For my Canon N1220U it returns 0x04, which happens to
 	be the bit I have to test against to see if the scanner button was pressed.
 	However, this has to be tested on other scanners to see if this is true.
+	UPDATE by BS: The LIDE 20 also returns 0x04, but it has three buttons!
+	So this guess is probably wrong. (Thanks to Christian Bucher for this info)
 	
 	Note 2: This works on my Canon N1220U. Whether this is Canon specific or
 	if it works for all 'plustek usb' type scanners is something I don't know.
@@ -244,9 +246,10 @@ int scanbtnd_get_button(scanner_t* scanner)
 	num_bytes = plustek_read(scanner, (void*)bytes, 1);
 	if (num_bytes != 1) return 0;
 	
-	// by bst: This is my first attempt to get rid of the 
+	// by BS: This is my first attempt to get rid of the 
 	// hardcoded button bitmask. Note that I do not own any device
 	// supported by this backend, so this code is based on guessing.
+	// Tested on the LIDE 20, should work for 1-button devices, too.
 	switch (scanner->num_buttons) {
 	case 1:
 		if ((bytes[0] & 0x04) != 0) button = 1;
