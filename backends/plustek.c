@@ -29,7 +29,7 @@
 
 static char* backend_name = "Plustek USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 5
+#define NUM_SUPPORTED_USB_DEVICES 6
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
@@ -37,6 +37,7 @@ static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	{ 0x04a9, 0x2208, 1 },	// CanoScan CanoScan D660U
 	{ 0x04a9, 0x2206, 1 },	// CanoScan N650U
 	{ 0x04a9, 0x220d, 3 },	// CanoScan LiDE 20
+	{ 0x04a9, 0x2220, 3 },  // CanoScan LiDE 25
 	{ 0x04a9, 0x220e, 3 }	// CanoScan LiDE 30
 };
 
@@ -45,6 +46,7 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Canon", "CanoScan D660U"  },
 	{ "Canon", "CanoScan N650U" },
 	{ "Canon", "CanoScan LiDE 20" },
+	{ "Canon", "CanoScan LiDE 25" },
 	{ "Canon", "CanoScan LiDE 30" }
 };
 
