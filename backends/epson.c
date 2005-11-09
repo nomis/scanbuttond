@@ -103,7 +103,8 @@ void epson_attach_libusb_scanner(libusb_device_t* device)
 	scanner->connection = CONNECTION_LIBUSB;
 	scanner->internal_dev_ptr = (void*)device;
 	scanner->lastbutton = 0;
-	scanner->sane_device = (char*)malloc(strlen(device->location) + strlen(descriptor_prefix) + 1);
+	scanner->sane_device = (char*)malloc(strlen(device->location) + 
+		strlen(descriptor_prefix) + 1);
 	strcpy(scanner->sane_device, descriptor_prefix);
 	strcat(scanner->sane_device, device->location);
 	scanner->num_buttons = supported_usb_devices[index][2];
@@ -222,7 +223,8 @@ int epson_read(scanner_t* scanner, void* buffer, int bytecount)
 {
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
-			return libusb_read((libusb_device_t*)scanner->internal_dev_ptr, buffer, bytecount);
+			return libusb_read((libusb_device_t*)scanner->internal_dev_ptr, 
+				buffer, bytecount);
 			break;
 	}
 	return -1;
@@ -233,7 +235,8 @@ int epson_write(scanner_t* scanner, void* buffer, int bytecount)
 {
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
-			return libusb_write((libusb_device_t*)scanner->internal_dev_ptr, buffer, bytecount);
+			return libusb_write((libusb_device_t*)scanner->internal_dev_ptr, 
+				buffer, bytecount);
 			break;
 	}
 	return -1;

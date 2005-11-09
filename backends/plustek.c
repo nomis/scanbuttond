@@ -85,7 +85,7 @@ void plustek_attach_libusb_scanner(libusb_device_t* device)
 	scanner->internal_dev_ptr = (void*)device;
 	scanner->lastbutton = 0;
 	scanner->sane_device = (char*)malloc(strlen(device->location) +
-			strlen(descriptor_prefix) + 1);
+		strlen(descriptor_prefix) + 1);
 	strcpy(scanner->sane_device, descriptor_prefix);
 	strcat(scanner->sane_device, device->location);
 	scanner->num_buttons = supported_usb_devices[index][2];
@@ -112,7 +112,8 @@ void plustek_scan_devices(libusb_device_t* devices)
 	libusb_device_t* device = devices;
 	while (device != NULL) {
 		index = plustek_match_libusb_scanner(device);
-		if (index >= 0) plustek_attach_libusb_scanner(device);
+		if (index >= 0) 
+			plustek_attach_libusb_scanner(device);
 		device = device->next;
 	}
 }
@@ -165,28 +166,37 @@ const scanner_t* scanbtnd_get_supported_devices(void)
 
 int scanbtnd_open(scanner_t* scanner)
 {
+	int result = -ENOSYS;
+	if (scanner->is_open)
+		return -EINVAL;
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
-      // if devices have been added/removed, return -ENODEV to
-      // make scanbuttond update its device list
-			if (libusb_get_changed_device_count() != 0) {
+			// if devices have been added/removed, return -ENODEV to
+			// make scanbuttond update its device list
+			if (libusb_get_changed_device_count() != 0)
 				return -ENODEV;
-			}
-			return libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
+			result = libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
 			break;
 	}
-	return -1;
+	if (result == 0)
+		scanner->is_open = 1;
+	return result;
 }
 
 
 int scanbtnd_close(scanner_t* scanner)
 {
+	int result = -ENOSYS;
+	if (!scanner->is_open)
+		return -EINVAL;
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
-			return libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
+			result = libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
 			break;
 	}
-	return -1;
+	if (result == 0)
+		scanner->is_open = 0;
+	return result;
 }
 
 
@@ -195,7 +205,7 @@ int plustek_read(scanner_t* scanner, void* buffer, int bytecount)
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
 			return libusb_read((libusb_device_t*)scanner->internal_dev_ptr,
-								buffer, bytecount);
+				buffer, bytecount);
 			break;
 	}
 	return -1;
@@ -207,7 +217,7 @@ int plustek_write(scanner_t* scanner, void* buffer, int bytecount)
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
 			return libusb_write((libusb_device_t*)scanner->internal_dev_ptr,
-								 buffer, bytecount);
+				buffer, bytecount);
 			break;
 	}
 	return -1;
