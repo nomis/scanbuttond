@@ -89,6 +89,7 @@ void plustek_attach_libusb_scanner(libusb_device_t* device)
 	strcpy(scanner->sane_device, descriptor_prefix);
 	strcat(scanner->sane_device, device->location);
 	scanner->num_buttons = supported_usb_devices[index][2];
+	scanner->is_open = 0;
 	scanner->next = plustek_scanners;
 	plustek_scanners = scanner;
 }
