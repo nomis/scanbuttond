@@ -29,7 +29,7 @@
 
 static char* backend_name = "Plustek USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 7
+#define NUM_SUPPORTED_USB_DEVICES 8
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
@@ -39,7 +39,8 @@ static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	{ 0x04a9, 0x220d, 3 },	// CanoScan LiDE 20
 	{ 0x04a9, 0x2220, 3 },  // CanoScan LiDE 25
 	{ 0x04a9, 0x220e, 3 },	// CanoScan LiDE 30
-	{ 0x04b8, 0x011d, 4 }   // Epson Perfection 1260
+	{ 0x04b8, 0x011d, 4 },   // Epson Perfection 1260
+	{ 0x1606, 0x0060, 4 }  // UMAX Astra 3400 (3450?)
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
@@ -49,7 +50,8 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Canon", "CanoScan LiDE 20" },
 	{ "Canon", "CanoScan LiDE 25" },
 	{ "Canon", "CanoScan LiDE 30" },
-	{ "Epson", "Perfection 1260" }
+	{ "Epson", "Perfection 1260" },
+	{ "UMAX", "Astra 3400/3450" }
 };
 
 
