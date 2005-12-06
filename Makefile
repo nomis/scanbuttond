@@ -19,8 +19,8 @@ REMOVE = rm -f
 DISTFILES = Makefile scanbuttond.c
 
 all: scanbuttond backends/libmeta.so.1.0 backends/libepson.so.1.0 \
-backends/libplustek.so.1.0 backends/libsnapscan.so.1.0 \
-backends/libniash.so.1.0 interface/libusbi.so.1.0
+backends/libplustek.so.1.0 backends/libplustek_umax.so.1.0 \
+backends/libsnapscan.so.1.0 backends/libniash.so.1.0 interface/libusbi.so.1.0
 
 install: scanbuttond backends/libepson.so.1.0 backends/libplustek.so.1.0 \
 backends/libsnapscan.so.1.0 backends/libniash.so.1.0 backends/libmeta.so.1.0 \
@@ -30,6 +30,7 @@ interface/libusbi.so.1.0
 	$(INSTALL) interface/libusbi.so.1.0 $(DESTDIR)$(libdir)/libusbi.so.1.0
 	$(INSTALL) backends/libepson.so.1.0 $(DESTDIR)$(libdir)/libepson.so.1.0
 	$(INSTALL) backends/libplustek.so.1.0 $(DESTDIR)$(libdir)/libplustek.so.1.0
+	$(INSTALL) backends/libplustek_umax.so.1.0 $(DESTDIR)$(libdir)/libplustek_umax.so.1.0
 	$(INSTALL) backends/libsnapscan.so.1.0 $(DESTDIR)$(libdir)/libsnapscan.so.1.0
 	$(INSTALL) backends/libniash.so.1.0 $(DESTDIR)$(libdir)/libniash.so.1.0
 	$(INSTALL) backends/libmeta.so.1.0 $(DESTDIR)$(libdir)/libmeta.so.1.0
@@ -37,6 +38,7 @@ interface/libusbi.so.1.0
 	ln -sf libusbi.so.1 $(DESTDIR)$(libdir)/libusbi.so
 	ln -sf libepson.so.1 $(DESTDIR)$(libdir)/libepson.so
 	ln -sf libplustek.so.1 $(DESTDIR)$(libdir)/libplustek.so
+	ln -sf libplustek_umax.so.1 $(DESTDIR)$(libdir)/libplustek_umax.so
 	ln -sf libsnapscan.so.1 $(DESTDIR)$(libdir)/libsnapscan.so
 	ln -sf libniash.so.1 $(DESTDIR)$(libdir)/libniash.so
 	ln -sf libmeta.so.1 $(DESTDIR)$(libdir)/libmeta.so
@@ -65,6 +67,12 @@ backends/libplustek.so.1.0: interface/libusbi.so.1.0 backends/plustek.c backends
 	$(CC) -shared -L./interface -Wl,-soname,libplustek.so.1 -Wl,-rpath,./interface:$(libdir)  -o backends/libplustek.so.1.0 backends/plustek.o -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libplustek.so.1 backends/libplustek.so
+
+backends/libplustek_umax.so.1.0: interface/libusbi.so.1.0 backends/plustek_umax.c backends/plustek_umax.h backends/backend.h
+	$(CC) -c -fPIC $(CFLAGS) backends/plustek_umax.c -o backends/plustek_umax.o
+	$(CC) -shared -L./interface -Wl,-soname,libplustek_umax.so.1 -Wl,-rpath,./interface:$(libdir)  -o backends/libplustek_umax.so.1.0 backends/plustek_umax.o -lusbi
+	/sbin/ldconfig -n ./backends
+	ln -sf libplustek_umax.so.1 backends/libplustek_umax.so
 
 backends/libsnapscan.so.1.0: interface/libusbi.so.1.0 backends/snapscan.c backends/snapscan.h backends/backend.h
 	$(CC) -c -fPIC $(CFLAGS) backends/snapscan.c -o backends/snapscan.o
@@ -95,11 +103,13 @@ clean:
 	$(REMOVE) scanbuttond.o
 	$(REMOVE) backends/epson.o
 	$(REMOVE) backends/plustek.o
+	$(REMOVE) backends/plustek_umax.so
 	$(REMOVE) backends/snapscan.o
 	$(REMOVE) backends/niash.o
 	$(REMOVE) backends/meta.o
 	$(REMOVE) backends/libepson.so*
 	$(REMOVE) backends/libplustek.so*
+	$(REMOVE) backends/libplustek_umax.so*
 	$(REMOVE) backends/libsnapscan.so*
 	$(REMOVE) backends/libniash.so*
 	$(REMOVE) backends/libmeta.so*
