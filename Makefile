@@ -1,6 +1,6 @@
 #
 # Makefile for scanbuttond
-# Copyleft )c( 2004-2005 by Bernhard Stiftner
+# Copyleft )c( 2004-2006 by Bernhard Stiftner
 #
 
 prefix = /usr/local
@@ -20,11 +20,12 @@ DISTFILES = Makefile scanbuttond.c
 
 all: scanbuttond backends/libmeta.so.1.0 backends/libepson.so.1.0 \
 backends/libplustek.so.1.0 backends/libplustek_umax.so.1.0 \
-backends/libsnapscan.so.1.0 backends/libniash.so.1.0 interface/libusbi.so.1.0
+backends/libsnapscan.so.1.0 backends/libniash.so.1.0 backends/libmustek.so.1.0 \
+interface/libusbi.so.1.0
 
 install: scanbuttond backends/libepson.so.1.0 backends/libplustek.so.1.0 \
 backends/libsnapscan.so.1.0 backends/libniash.so.1.0 backends/libmeta.so.1.0 \
-interface/libusbi.so.1.0
+backends/libmustek.so.1.0 interface/libusbi.so.1.0
 	$(INSTALL) scanbuttond $(DESTDIR)$(bindir)/scanbuttond
 	mkdir -p $(libdir)
 	$(INSTALL) interface/libusbi.so.1.0 $(DESTDIR)$(libdir)/libusbi.so.1.0
@@ -33,6 +34,7 @@ interface/libusbi.so.1.0
 	$(INSTALL) backends/libplustek_umax.so.1.0 $(DESTDIR)$(libdir)/libplustek_umax.so.1.0
 	$(INSTALL) backends/libsnapscan.so.1.0 $(DESTDIR)$(libdir)/libsnapscan.so.1.0
 	$(INSTALL) backends/libniash.so.1.0 $(DESTDIR)$(libdir)/libniash.so.1.0
+	$(INSTALL) backends/libmustek.so.1.0 $(DESTDIR)$(libdir)/libmustek.so.1.0
 	$(INSTALL) backends/libmeta.so.1.0 $(DESTDIR)$(libdir)/libmeta.so.1.0
 	/sbin/ldconfig $(DESTDIR)$(libdir)
 	ln -sf libusbi.so.1 $(DESTDIR)$(libdir)/libusbi.so
@@ -41,6 +43,7 @@ interface/libusbi.so.1.0
 	ln -sf libplustek_umax.so.1 $(DESTDIR)$(libdir)/libplustek_umax.so
 	ln -sf libsnapscan.so.1 $(DESTDIR)$(libdir)/libsnapscan.so
 	ln -sf libniash.so.1 $(DESTDIR)$(libdir)/libniash.so
+	ln -sf libmustek.so.1 $(DESTDIR)$(libdir)/libmustek.so
 	ln -sf libmeta.so.1 $(DESTDIR)$(libdir)/libmeta.so
 	if [ ! -d /etc/scanbuttond ]; then mkdir /etc/scanbuttond; fi
 	if [ ! -f /etc/scanbuttond/buttonpressed.sh ]; then cp buttonpressed.sh /etc/scanbuttond; fi
@@ -86,6 +89,12 @@ backends/libniash.so.1.0: interface/libusbi.so.1.0 backends/niash.c backends/nia
 	/sbin/ldconfig -n ./backends
 	ln -sf libniash.so.1 backends/libniash.so
 
+backends/libmustek.so.1.0: interface/libusbi.so.1.0 backends/mustek.c backends/mustek.h backends/backend.h
+	$(CC) -c -fPIC $(CFLAGS) backends/mustek.c -o backends/mustek.o
+	$(CC) -shared -L./interface -Wl,-soname,libmustek.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libmustek.so.1.0 backends/mustek.o -lusbi
+	/sbin/ldconfig -n ./backends
+	ln -sf libmustek.so.1 backends/libmustek.so
+
 backends/libmeta.so.1.0: interface/libusbi.so.1.0 lib/loader.o backends/meta.c backends/meta.h backends/backend.h
 	$(CC) $(CFLAGS) -c -fPIC backends/meta.c -o backends/meta.o
 	$(CC) -shared -L./interface -Wl,-soname,libmeta.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libmeta.so.1.0 backends/meta.o lib/loader.o -ldl -lusbi
@@ -112,6 +121,7 @@ clean:
 	$(REMOVE) backends/libplustek_umax.so*
 	$(REMOVE) backends/libsnapscan.so*
 	$(REMOVE) backends/libniash.so*
+	$(REMOVE) backends/libmustek.so*
 	$(REMOVE) backends/libmeta.so*
 	$(REMOVE) interface/libusbi.o
 	$(REMOVE) interface/libusbi.so*
