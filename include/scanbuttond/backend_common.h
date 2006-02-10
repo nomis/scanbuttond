@@ -1,4 +1,4 @@
-// epson.h: Epson ESC/I device backend
+// backend_common.h: fundamental data types, constants, ...
 // This file is part of scanbuttond.
 // Copyleft )c( 2004-2006 by Bernhard Stiftner
 //
@@ -16,9 +16,40 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#ifndef __SCANBTND_EPSON_H_INCLUDED
-#define __SCANBTND_EPSON_H_INCLUDED
+#ifndef __SCANBTND_BACKEND_COMMON_H_INCLUDED
+#define __SCANBTND_BACKEND_COMMON_H_INCLUDED
 
-#include "scanbuttond/backend.h"
+/**
+ * \file scanbuttond.h
+ * \brief Fundamental data types, macros, functions, ...
+ *
+ * This header defines some fundamental things which are used
+ * throughout the whole project.
+ */
+
+
+// connection types
+#define NUM_CONNECTIONS		2
+#define CONNECTION_NONE		0
+#define CONNECTION_LIBUSB 	1
+
+struct scanbtnd_scanner;
+typedef struct scanbtnd_scanner scanbtnd_scanner_t;
+
+struct scanbtnd_scanner {
+	char* vendor;
+	char* product;
+	int connection;
+	void* internal_dev_ptr;
+	char* sane_device;
+	void* meta_info;
+	int lastbutton;
+	int is_open;
+	int num_buttons;
+	
+	scanbtnd_scanner_t* next;
+};
+
+char* scanbtnd_get_connection_name(int connection);
 
 #endif

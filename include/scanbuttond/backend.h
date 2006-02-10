@@ -1,6 +1,6 @@
 // backend.h: specification of the mandatory backend functions
 // This file is part of scanbuttond.
-// Copyleft )c( 2004-2005 by Bernhard Stiftner
+// Copyleft )c( 2004-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -16,10 +16,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#ifndef __BACKEND_H_INCLUDED
-#define __BACKEND_H_INCLUDED
+#ifndef __SCANBTND_BACKEND_H_INCLUDED
+#define __SCANBTND_BACKEND_H_INCLUDED
 
-#include "scanbuttond.h"
+#include "scanbuttond/backend_common.h"
 
 /**
  * \file backend.h
@@ -60,7 +60,7 @@ int scanbtnd_rescan(void);
  * that.
  * \return a linked list of supported scanner devices
  */
-const scanner_t* scanbtnd_get_supported_devices(void);
+const scanbtnd_scanner_t* scanbtnd_get_supported_devices(void);
 
 /**
  * Opens the given scanner device.
@@ -75,7 +75,7 @@ const scanner_t* scanbtnd_get_supported_devices(void);
  * \retval -EINVAL if the device is already open
  * \retval -ENOSYS if there is no connection method to communicate with the device
  */
-int scanbtnd_open(scanner_t* scanner);
+int scanbtnd_open(scanbtnd_scanner_t* scanner);
 
 /**
  * Closes the given scanner device.
@@ -87,7 +87,7 @@ int scanbtnd_open(scanner_t* scanner);
  * \retval -EINVAL if the device is already closed
  * \retval -ENOSYS if there is no connection method to communicate with the device
  */
-int scanbtnd_close(scanner_t* scanner);
+int scanbtnd_close(scanbtnd_scanner_t* scanner);
 
 /**
  * Queries the scanner's button status.
@@ -96,7 +96,7 @@ int scanbtnd_close(scanner_t* scanner);
  * pressed, or <0 if there was an error.
  * \retval -EINVAL if the scanner device has not been opened before
  */
-int scanbtnd_get_button(scanner_t* scanner);
+int scanbtnd_get_button(scanbtnd_scanner_t* scanner);
 
 /**
  * Gets the SANE device name of this scanner.
@@ -104,7 +104,7 @@ int scanbtnd_get_button(scanner_t* scanner);
  * \param scanner the scanner device
  * \return the SANE device name, or NULL if the SANE device name cannot be determined.
  */
-const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner);
+const char* scanbtnd_get_sane_device_descriptor(scanbtnd_scanner_t* scanner);
 
 /**
  * Shuts down this backend.

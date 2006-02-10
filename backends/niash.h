@@ -1,7 +1,7 @@
 // niash.h: Niash device backend
 // This file is part of scanbuttond.
 // This file is part of scanbuttond.
-// Copyleft )c( 2005 by Bernhard Stiftner
+// Copyleft )c( 2005-2006 by Bernhard Stiftner
 // Copyleft )c( 2005 by Dirk Wriedt
 //
 // This program is free software; you can redistribute it and/or
@@ -18,9 +18,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#ifndef __NIASH_H_INCLUDED
-#define __NIASH_H_INCLUDED
+#ifndef __SCANBTND_NIASH_H_INCLUDED
+#define __SCANBTND_NIASH_H_INCLUDED
 
-#include "backend.h"
+#include "scanbuttond/backend.h"
 
 #endif

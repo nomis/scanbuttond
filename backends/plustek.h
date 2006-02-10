@@ -1,7 +1,7 @@
 // plustek.h: Plustek device backend
 // This file is part of scanbuttond.
 // Copyleft )c( 2005 by Hans Verkuil
-// Copyleft )c( 2005 by Bernhard Stiftner
+// Copyleft )c( 2005-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -17,9 +17,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#ifndef __PLUSTEK_H_INCLUDED
-#define __PLUSTEK_H_INCLUDED
+#ifndef __SCANBTND_PLUSTEK_H_INCLUDED
+#define __SCANBTND_PLUSTEK_H_INCLUDED
 
-#include "backend.h"
+#include "scanbuttond/backend.h"
 
 #endif

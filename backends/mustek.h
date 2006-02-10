@@ -16,9 +16,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#ifndef __MUSTEK_H_INCLUDED
-#define __MUSTEK_H_INCLUDED
+#ifndef __SCANBTND_MUSTEK_H_INCLUDED
+#define __SCANBTND_MUSTEK_H_INCLUDED
 
-#include "backend.h"
+#include "scanbuttond/backend.h"
 
 #endif

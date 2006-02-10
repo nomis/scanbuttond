@@ -1,7 +1,7 @@
 // plustek_umax.c: Plustek device backend for UMAX models
 // This file is part of scanbuttond.
 // Copyleft )c( 2005 by Hans Verkuil
-// Copyleft )c( 2005 by Bernhard Stiftner
+// Copyleft )c( 2005-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -23,11 +23,11 @@
 #include <unistd.h>
 #include <errno.h>
 #include <syslog.h>
-#include "scanbuttond.h"
-#include "interface/libusbi.h"
-#include "backends/plustek_umax.h"
+#include "plustek.h"
+#include "scanbuttond/interface_usb.h"
+#include "generic_backend.h"
 
-static char* backend_name = "Plustek USB for UMAX";
+#define BACKEND_NAME	"Plustek USB for UMAX"
 
 #define NUM_SUPPORTED_USB_DEVICES 1
 
@@ -41,179 +41,23 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 };
 
 
-libusb_handle_t* libusb_handle;
-scanner_t* plustek_scanners = NULL;
+GENERIC_GLOBALS
+GENERIC_MATCH_LIBUSB_SCANNER_FUNC
+GENERIC_ATTACH_LIBUSB_SCANNER_FUNC("plustek:libusb:")
+GENERIC_DETACH_SCANNERS_FUNC
+GENERIC_SCAN_DEVICES_FUNC
+GENERIC_INIT_LIBUSB_FUNC
+GENERIC_GET_BACKEND_NAME_FUNC
+GENERIC_INIT_FUNC
+GENERIC_RESCAN_FUNC
+GENERIC_GET_SUPPORTED_DEVICES_FUNC
+GENERIC_OPEN_FUNC
+GENERIC_CLOSE_FUNC
+GENERIC_READ_FUNC
+GENERIC_WRITE_FUNC
 
 
-// returns -1 if the scanner is unsupported, or the index of the
-// corresponding vendor-product pair in the supported_usb_devices array.
-int plustek_match_libusb_scanner(libusb_device_t* device)
-{
-	int index;
-	for (index = 0; index < NUM_SUPPORTED_USB_DEVICES; index++) {
-		if (supported_usb_devices[index][0] == device->vendorID &&
-				  supported_usb_devices[index][1] == device->productID) {
-			break;
-		}
-	}
-	if (index >= NUM_SUPPORTED_USB_DEVICES) return -1;
-	return index;
-}
-
-
-void plustek_attach_libusb_scanner(libusb_device_t* device)
-{
-	const char* descriptor_prefix = "plustek:libusb:";
-	int index = plustek_match_libusb_scanner(device);
-	if (index < 0) return; // unsupported
-	scanner_t* scanner = (scanner_t*)malloc(sizeof(scanner_t));
-	scanner->vendor = usb_device_descriptions[index][0];
-	scanner->product = usb_device_descriptions[index][1];
-	scanner->connection = CONNECTION_LIBUSB;
-	scanner->internal_dev_ptr = (void*)device;
-	scanner->lastbutton = 0;
-	scanner->sane_device = (char*)malloc(strlen(device->location) +
-		strlen(descriptor_prefix) + 1);
-	strcpy(scanner->sane_device, descriptor_prefix);
-	strcat(scanner->sane_device, device->location);
-	scanner->num_buttons = supported_usb_devices[index][2];
-	scanner->is_open = 0;
-	scanner->next = plustek_scanners;
-	plustek_scanners = scanner;
-}
-
-
-void plustek_detach_scanners(void)
-{
-	scanner_t* next;
-	while (plustek_scanners != NULL) {
-		next = plustek_scanners->next;
-		free(plustek_scanners->sane_device);
-		free(plustek_scanners);
-		plustek_scanners = next;
-	}
-}
-
-
-void plustek_scan_devices(libusb_device_t* devices)
-{
-	int index;
-	libusb_device_t* device = devices;
-	while (device != NULL) {
-		index = plustek_match_libusb_scanner(device);
-		if (index >= 0) 
-			plustek_attach_libusb_scanner(device);
-		device = device->next;
-	}
-}
-
-
-int plustek_init_libusb(void)
-{
-	libusb_device_t* devices;
-
-	libusb_handle = libusb_init();
-	devices = libusb_get_devices(libusb_handle);
-	plustek_scan_devices(devices);
-	return 0;
-}
-
-
-const char* scanbtnd_get_backend_name(void)
-{
-	return backend_name;
-}
-
-
-int scanbtnd_init(void)
-{
-	plustek_scanners = NULL;
-
-	syslog(LOG_INFO, "plustek-umax-backend: init");
-	return plustek_init_libusb();
-}
-
-
-int scanbtnd_rescan(void)
-{
-	libusb_device_t* devices;
-
-	plustek_detach_scanners();
-	plustek_scanners = NULL;
-	libusb_rescan(libusb_handle);
-	devices = libusb_get_devices(libusb_handle);
-	plustek_scan_devices(devices);
-	return 0;
-}
-
-
-const scanner_t* scanbtnd_get_supported_devices(void)
-{
-	return plustek_scanners;
-}
-
-
-int scanbtnd_open(scanner_t* scanner)
-{
-	int result = -ENOSYS;
-	if (scanner->is_open)
-		return -EINVAL;
-	switch (scanner->connection) {
-		case CONNECTION_LIBUSB:
-			// if devices have been added/removed, return -ENODEV to
-			// make scanbuttond update its device list
-			if (libusb_get_changed_device_count() != 0)
-				return -ENODEV;
-			result = libusb_open((libusb_device_t*)scanner->internal_dev_ptr);
-			break;
-	}
-	if (result == 0)
-		scanner->is_open = 1;
-	return result;
-}
-
-
-int scanbtnd_close(scanner_t* scanner)
-{
-	int result = -ENOSYS;
-	if (!scanner->is_open)
-		return -EINVAL;
-	switch (scanner->connection) {
-		case CONNECTION_LIBUSB:
-			result = libusb_close((libusb_device_t*)scanner->internal_dev_ptr);
-			break;
-	}
-	if (result == 0)
-		scanner->is_open = 0;
-	return result;
-}
-
-
-int plustek_read(scanner_t* scanner, void* buffer, int bytecount)
-{
-	switch (scanner->connection) {
-		case CONNECTION_LIBUSB:
-			return libusb_read((libusb_device_t*)scanner->internal_dev_ptr,
-				buffer, bytecount);
-			break;
-	}
-	return -1;
-}
-
-
-int plustek_write(scanner_t* scanner, void* buffer, int bytecount)
-{
-	switch (scanner->connection) {
-		case CONNECTION_LIBUSB:
-			return libusb_write((libusb_device_t*)scanner->internal_dev_ptr,
-				buffer, bytecount);
-			break;
-	}
-	return -1;
-}
-
-
-int scanbtnd_get_button(scanner_t* scanner)
+int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
 {
 	unsigned char bytes[255];
 	int num_bytes;
@@ -224,9 +68,9 @@ int scanbtnd_get_button(scanner_t* scanner)
 	bytes[2] = 0;
 	bytes[3] = 1;
 
-	num_bytes = plustek_write(scanner, (void*)bytes, 4);
+	num_bytes = scanbtnd_write(scanner, (void*)bytes, 4);
 	if (num_bytes != 4) return 0;
-	num_bytes = plustek_read(scanner, (void*)bytes, 1);
+	num_bytes = scanbtnd_read(scanner, (void*)bytes, 1);
 	if (num_bytes != 1) return 0;
 	
 	switch (scanner->num_buttons) {
@@ -253,17 +97,5 @@ int scanbtnd_get_button(scanner_t* scanner)
 }
 
 
-const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
-{
-	return scanner->sane_device;
-}
-
-
-int scanbtnd_exit(void)
-{
-	syslog(LOG_INFO, "plustek-umax-backend: exit");
-	plustek_detach_scanners();
-	libusb_exit(libusb_handle);
-	return 0;
-}
-
+GENERIC_GET_SANE_DEVICE_DESCRIPTOR_FUNC
+GENERIC_EXIT_FUNC

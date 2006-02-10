@@ -1,6 +1,6 @@
 // meta.h: meta backend ("dynamic backend loader")
 // This file is part of scanbuttond.
-// Copyleft )c( 2005 by Bernhard Stiftner
+// Copyleft )c( 2005-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -16,10 +16,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#ifndef __META_H_INCLUDED
-#define __META_H_INCLUDED
+#ifndef __SCANBTND_META_H_INCLUDED
+#define __SCANBTND_META_H_INCLUDED
 
-#include "backend.h"
-#include "lib/loader.h"
+#include "scanbuttond/backend.h"
 
 #endif
