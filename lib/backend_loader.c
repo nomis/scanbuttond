@@ -1,6 +1,6 @@
-// loader.h: dynamic backend library loader
+// backend_loader.c: dynamic backend library loader
 // This file is part of scanbuttond.
-// Copyleft )c( 2005 by Bernhard Stiftner
+// Copyleft )c( 2005-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -23,9 +23,9 @@
 #include <syslog.h>
 #include <dlfcn.h>
 #include <errno.h>
-#include "loader.h"
+#include "scanbuttond/backend_loader.h"
 
-backend_t* load_backend(const char* filename)
+scanbtnd_backend_t* scanbtnd_load_backend(const char* filename)
 {
 	char* error;
 	void* dll_handle = dlopen(filename, RTLD_NOW|RTLD_LOCAL);
@@ -35,7 +35,7 @@ backend_t* load_backend(const char* filename)
 		return NULL;
 	}
 	dlerror();  // Clear any existing error
-	backend_t* backend = (backend_t*)malloc(sizeof(backend_t));
+	scanbtnd_backend_t* backend = (scanbtnd_backend_t*)malloc(sizeof(scanbtnd_backend_t));
 	backend->handle = dll_handle;
 	backend->scanbtnd_get_backend_name = dlsym(dll_handle, "scanbtnd_get_backend_name");
 	if ((error = dlerror()) != NULL) {
@@ -105,7 +105,7 @@ backend_t* load_backend(const char* filename)
 }
 
 
-void unload_backend(backend_t* backend)
+void scanbtnd_unload_backend(scanbtnd_backend_t* backend)
 {
 	dlclose(backend->handle);
 	free(backend);

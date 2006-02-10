@@ -1,6 +1,6 @@
-// libusbi.h: libusb wrapper
+// interface_libusb.c: libusb wrapper
 // This file is part of scanbuttond.
-// Copyleft )c( 2004-2005 by Bernhard Stiftner
+// Copyleft )c( 2004-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -23,29 +23,29 @@
 #include <errno.h>
 #include <usb.h>
 #include <syslog.h>
-#include "libusbi.h"
+#include "scanbuttond/interface_usb.h"
 
 #define TIMEOUT	   	10 * 1000	/* 10 seconds */
 
 int invocation_count = 0;
 
 
-libusb_handle_t* libusb_init(void)
+scanbtnd_libusb_handle_t* scanbtnd_libusb_init(void)
 {
-	libusb_handle_t* handle;
+	scanbtnd_libusb_handle_t* handle;
 	invocation_count++;
 	if (invocation_count == 1) {
-		syslog(LOG_INFO, "libusbi: initializing...");
+		syslog(LOG_INFO, "interface_libusb: initializing...");
 		usb_init();
 	}
-	handle = (libusb_handle_t*)malloc(sizeof(libusb_handle_t));
+	handle = (scanbtnd_libusb_handle_t*)malloc(sizeof(scanbtnd_libusb_handle_t));
 	handle->devices = NULL;
-	libusb_rescan(handle);
+	scanbtnd_libusb_rescan(handle);
 	return handle;
 }
 
 
-int libusb_search_interface(struct usb_device* device)
+int scanbtnd_libusb_search_interface(struct usb_device* device)
 {
 	int found = 0;
 	int interface;
@@ -71,7 +71,7 @@ int libusb_search_interface(struct usb_device* device)
 }
 
 
-int libusb_search_in_endpoint(struct usb_device* device)
+int scanbtnd_libusb_search_in_endpoint(struct usb_device* device)
 {
 	int usb_in_ep = 0;
 	int usb_out_ep = 0;
@@ -102,7 +102,7 @@ int libusb_search_in_endpoint(struct usb_device* device)
 }
 
 
-int libusb_search_out_endpoint(struct usb_device* device)
+int scanbtnd_libusb_search_out_endpoint(struct usb_device* device)
 {
 	int usb_in_ep = 0;
 	int usb_out_ep = 0;
@@ -133,9 +133,9 @@ int libusb_search_out_endpoint(struct usb_device* device)
 }
 
 
-void libusb_attach_device(struct usb_device* device, libusb_handle_t* handle)
+void scanbtnd_libusb_attach_device(struct usb_device* device, scanbtnd_libusb_handle_t* handle)
 {
-	libusb_device_t* libusb_device = (libusb_device_t*)malloc(sizeof(libusb_device_t));
+	scanbtnd_libusb_device_t* libusb_device = (scanbtnd_libusb_device_t*)malloc(sizeof(scanbtnd_libusb_device_t));
 	libusb_device->vendorID = device->descriptor.idVendor;
 	libusb_device->productID = device->descriptor.idProduct;
 
@@ -147,19 +147,19 @@ void libusb_attach_device(struct usb_device* device, libusb_handle_t* handle)
 
 	libusb_device->device = device;
 	libusb_device->handle = NULL;
-	libusb_device->interface = libusb_search_interface(device);
+	libusb_device->interface = scanbtnd_libusb_search_interface(device);
 	if (libusb_device->interface < 0) {
 		free(libusb_device->location);
 		free(libusb_device);
 		return;
 	}
-	libusb_device->out_endpoint = libusb_search_out_endpoint(device);
+	libusb_device->out_endpoint = scanbtnd_libusb_search_out_endpoint(device);
 	if (libusb_device->out_endpoint < 0) {
 		free(libusb_device->location);
 		free(libusb_device);
 		return;
 	}
-	libusb_device->in_endpoint = libusb_search_in_endpoint(device);
+	libusb_device->in_endpoint = scanbtnd_libusb_search_in_endpoint(device);
 	if (libusb_device->in_endpoint < 0) {
 		free(libusb_device->location);
 		free(libusb_device);
@@ -170,9 +170,9 @@ void libusb_attach_device(struct usb_device* device, libusb_handle_t* handle)
 }
 
 
-void libusb_detach_devices(libusb_handle_t* handle)
+void scanbtnd_libusb_detach_devices(scanbtnd_libusb_handle_t* handle)
 {
-	libusb_device_t* next;
+	scanbtnd_libusb_device_t* next;
 	while (handle->devices != NULL) {
 		next = handle->devices->next;
 		free(handle->devices->location);
@@ -182,12 +182,12 @@ void libusb_detach_devices(libusb_handle_t* handle)
 }
 
 
-void libusb_rescan(libusb_handle_t* handle)
+void scanbtnd_libusb_rescan(scanbtnd_libusb_handle_t* handle)
 {
 	struct usb_bus *bus;
 	struct usb_device *device;
 
-	libusb_detach_devices(handle);
+	scanbtnd_libusb_detach_devices(handle);
 
 	usb_find_busses();
 	usb_find_devices();
@@ -197,7 +197,7 @@ void libusb_rescan(libusb_handle_t* handle)
 	while (bus != NULL) {
 		device = bus->devices;
 		while (device != NULL) {
-			libusb_attach_device(device, handle);
+			scanbtnd_libusb_attach_device(device, handle);
 			device = device->next;
 		}
 		bus = bus->next;
@@ -206,20 +206,20 @@ void libusb_rescan(libusb_handle_t* handle)
 }
 
 
-int libusb_get_changed_device_count(void)
+int scanbtnd_libusb_get_changed_device_count(void)
 {
 	usb_find_busses();
 	return usb_find_devices();
 }
 
 
-libusb_device_t* libusb_get_devices(libusb_handle_t* handle)
+scanbtnd_libusb_device_t* scanbtnd_libusb_get_devices(scanbtnd_libusb_handle_t* handle)
 {
 	return handle->devices;
 }
 
 
-int libusb_open(libusb_device_t* device)
+int scanbtnd_libusb_open(scanbtnd_libusb_device_t* device)
 {
 	int result;
 
@@ -228,7 +228,7 @@ int libusb_open(libusb_device_t* device)
 
 	device->handle = usb_open(device->device);
 	if (device->handle == NULL) {
-		syslog(LOG_ERR, "libusbi: could not open device %s", device->location);
+		syslog(LOG_ERR, "interface_libusb: could not open device %s", device->location);
 		return -ENODEV;
 	}
 
@@ -244,17 +244,17 @@ int libusb_open(libusb_device_t* device)
 		case 0:
 			return 0;
 		case -ENOMEM:
-			syslog(LOG_ERR, "libusbi: could not claim interface for device %s. (ENOMEM)",
+			syslog(LOG_ERR, "interface_libusb: could not claim interface for device %s. (ENOMEM)",
 				   device->location);
 			usb_close(device->handle);
 			return -ENODEV;
 		case -EBUSY:
-			syslog(LOG_ERR, "libusbi: could not claim interface for device %s. (EBUSY)",
+			syslog(LOG_ERR, "interface_libusb: could not claim interface for device %s. (EBUSY)",
 				   device->location);
 			usb_close(device->handle);
 			return -EBUSY;
 		default:
-			syslog(LOG_ERR, "libusbi: could not claim interface for device %s. (code=%d)",
+			syslog(LOG_ERR, "interface_libusb: could not claim interface for device %s. (code=%d)",
 				   device->location, result);
 			usb_close(device->handle);
 			return -ENODEV;
@@ -262,18 +262,18 @@ int libusb_open(libusb_device_t* device)
 }
 
 
-int libusb_close(libusb_device_t* device)
+int scanbtnd_libusb_close(scanbtnd_libusb_device_t* device)
 {
 	int result;
 	result = usb_release_interface(device->handle, device->interface);
 	if (result < 0) {
-		syslog(LOG_ERR, "libusbi: could not release interface, error code=%d, device=%s",
+		syslog(LOG_ERR, "interface_libusb: could not release interface, error code=%d, device=%s",
 			   result, device->location);
 		return result;
 	}
 	result = usb_close(device->handle);
 	if (result < 0) {
-		syslog(LOG_ERR, "libusbi: could not close usb device, error code=%d, device=%s",
+		syslog(LOG_ERR, "interface_libusb: could not close usb device, error code=%d, device=%s",
 			   result, device->location);
 		return result;
 	}
@@ -281,7 +281,7 @@ int libusb_close(libusb_device_t* device)
 }
 
 
-int libusb_read(libusb_device_t* device, void* buffer, int bytecount)
+int scanbtnd_libusb_read(scanbtnd_libusb_device_t* device, void* buffer, int bytecount)
 {
 	int num_bytes = usb_bulk_read(device->handle, device->in_endpoint,
 								  buffer, bytecount, TIMEOUT);
@@ -293,7 +293,7 @@ int libusb_read(libusb_device_t* device, void* buffer, int bytecount)
 }
 
 
-int libusb_write(libusb_device_t* device, void* buffer, int bytecount)
+int scanbtnd_libusb_write(scanbtnd_libusb_device_t* device, void* buffer, int bytecount)
 {
 	int num_bytes = usb_bulk_write(device->handle, device->out_endpoint,
 								   buffer, bytecount, TIMEOUT);
@@ -305,7 +305,7 @@ int libusb_write(libusb_device_t* device, void* buffer, int bytecount)
 }
 
 
-int libusb_control_msg(libusb_device_t* device, int requesttype, int request,
+int scanbtnd_libusb_control_msg(scanbtnd_libusb_device_t* device, int requesttype, int request,
 					   int value, int index, void* bytes, int size)
 {
 	int num_bytes = usb_control_msg(device->handle, requesttype, request, value,
@@ -319,12 +319,12 @@ int libusb_control_msg(libusb_device_t* device, int requesttype, int request,
 }
 
 
-void libusb_exit(libusb_handle_t* handle)
+void scanbtnd_libusb_exit(scanbtnd_libusb_handle_t* handle)
 {
 	invocation_count--;
 	if (invocation_count == 0)
-		syslog(LOG_INFO, "libusbi: shutting down...");
-	libusb_detach_devices(handle);
+		syslog(LOG_INFO, "interface_libusb: shutting down...");
+	scanbtnd_libusb_detach_devices(handle);
 	free(handle);
 }
 
