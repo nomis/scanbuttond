@@ -230,14 +230,17 @@ int scanbtnd_get_button(scanner_t* scanner)
 	bytes[4] = 0x14;
 	bytes[5] = 0x00;
 	num_bytes = snapscan_write(scanner, (void*)bytes, 6);
-	if (num_bytes != 6) return 0;
+	if (num_bytes != 6) 
+		return 0;
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 8);
-	if (num_bytes != 8 || bytes[0] != 0xF9) return 0;
+	if (num_bytes != 8 || bytes[0] != 0xF9) 
+		return 0;
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 20);
-	if (num_bytes != 20 || bytes[0] != 0xF0) return 0;
-	switch (bytes[18] & 0xF0) {
+	if (num_bytes != 20 || bytes[0] != 0xF0 || bytes[17] != 0xF0) 
+		return 0;
+	switch (bytes[18]) {
 		case 0x10: button = 1; break;
 		case 0x20: button = 2; break;
 		case 0x40: button = 3; break;
@@ -246,7 +249,8 @@ int scanbtnd_get_button(scanner_t* scanner)
 	};
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 8);
-	if (num_bytes != 8 || bytes[0] != 0xFB) return 0;
+	if (num_bytes != 8 || bytes[0] != 0xFB) 
+		return 0;
 
 	return button;
 }
