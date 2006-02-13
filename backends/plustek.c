@@ -69,6 +69,7 @@ GENERIC_OPEN_FUNC
 GENERIC_CLOSE_FUNC
 GENERIC_READ_FUNC
 GENERIC_WRITE_FUNC
+GENERIC_FLUSH_FUNC
 
 
 int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
@@ -104,10 +105,19 @@ int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
 	bytes[2] = 0;
 	bytes[3] = 1;
 
+	if (!scanner->is_open)
+		return -EINVAL;
+
 	num_bytes = scanbtnd_write(scanner, (void*)bytes, 4);
-	if (num_bytes != 4) return 0;
+	if (num_bytes != 4)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 	num_bytes = scanbtnd_read(scanner, (void*)bytes, 1);
-	if (num_bytes != 1) return 0;
+	if (num_bytes != 1)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 	
 	// by BS: This is my first attempt to get rid of the 
 	// hardcoded button bitmask. Note that I do not own any device

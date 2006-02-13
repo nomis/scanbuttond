@@ -59,6 +59,7 @@ GENERIC_OPEN_FUNC
 GENERIC_CLOSE_FUNC
 GENERIC_READ_FUNC
 GENERIC_WRITE_FUNC
+GENERIC_FLUSH_FUNC
 
 
 int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
@@ -73,14 +74,27 @@ int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
 	bytes[3] = 0x00;
 	bytes[4] = 0x14;
 	bytes[5] = 0x00;
+
+	if (!scanner->is_open)
+		return -EINVAL;
+
 	num_bytes = scanbtnd_write(scanner, (void*)bytes, 6);
-	if (num_bytes != 6) return 0;
+	if (num_bytes != 6)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 
 	num_bytes = scanbtnd_read(scanner, (void*)bytes, 8);
-	if (num_bytes != 8 || bytes[0] != 0xF9) return 0;
+	if (num_bytes != 8 || bytes[0] != 0xF9)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 
 	num_bytes = scanbtnd_read(scanner, (void*)bytes, 20);
-	if (num_bytes != 20 || bytes[0] != 0xF0) return 0;
+	if (num_bytes != 20 || bytes[0] != 0xF0)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 	switch (bytes[18] & 0xF0) {
 		case 0x10: button = 1; break;
 		case 0x20: button = 2; break;
@@ -90,7 +104,10 @@ int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
 	};
 
 	num_bytes = scanbtnd_read(scanner, (void*)bytes, 8);
-	if (num_bytes != 8 || bytes[0] != 0xFB) return 0;
+	if (num_bytes != 8 || bytes[0] != 0xFB)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 
 	return button;
 }

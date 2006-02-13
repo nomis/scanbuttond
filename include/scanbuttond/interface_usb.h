@@ -64,6 +64,8 @@ int scanbtnd_libusb_read(scanbtnd_libusb_device_t* device, void* buffer, int byt
 
 int scanbtnd_libusb_write(scanbtnd_libusb_device_t* device, void* buffer, int bytecount);
 
+void scanbtnd_libusb_flush(scanbtnd_libusb_device_t* device);
+
 int scanbtnd_libusb_control_msg(scanbtnd_libusb_device_t* device, int requesttype,
 	int request, int value, int index, void* bytes, int size);
 

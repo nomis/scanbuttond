@@ -305,6 +305,13 @@ int scanbtnd_libusb_write(scanbtnd_libusb_device_t* device, void* buffer, int by
 }
 
 
+void scanbtnd_libusb_flush(scanbtnd_libusb_device_t* device)
+{
+	char buffer[16];
+	while (usb_bulk_read(device->handle, device->in_endpoint, buffer, 16, 500) > 0) {};
+}
+
+
 int scanbtnd_libusb_control_msg(scanbtnd_libusb_device_t* device, int requesttype, int request,
 					   int value, int index, void* bytes, int size)
 {

@@ -197,6 +197,16 @@ int scanbtnd_write(scanbtnd_scanner_t* scanner, void* buffer, int bytecount)\
 	return -1;\
 }
 
+#define GENERIC_FLUSH_FUNC \
+int scanbtnd_flush(scanbtnd_scanner_t* scanner)\
+{\
+	switch (scanner->connection) {\
+		case CONNECTION_LIBUSB:\
+			scanbtnd_libusb_flush((scanbtnd_libusb_device_t*)scanner->internal_dev_ptr);\
+			break;\
+	}\
+}
+
 #define GENERIC_GET_SANE_DEVICE_DESCRIPTOR_FUNC \
 const char* scanbtnd_get_sane_device_descriptor(scanbtnd_scanner_t* scanner)\
 {\

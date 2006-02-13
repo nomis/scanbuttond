@@ -50,6 +50,4 @@ struct scanbtnd_scanner {
 	scanbtnd_scanner_t* next;
 };
 
-char* scanbtnd_get_connection_name(int connection);
-
 #endif

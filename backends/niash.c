@@ -104,6 +104,9 @@ int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
 	I don't know what the last request is for.
 	*/
 
+	if (!scanner->is_open)
+		return -EINVAL;
+
 	requesttype[0]=0x40; bytes[0] = 0x14; value[0]=0x87; /* SPP_CONTROL */
 	requesttype[1]=0x40; bytes[1] = 0x2e; value[1]=0x83; /* EPP_ADDR */
 	requesttype[2]=0x40; bytes[2] = 0x34; value[2]=0x87; /* SPP_CONTROL */

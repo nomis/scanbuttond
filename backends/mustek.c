@@ -54,6 +54,7 @@ GENERIC_OPEN_FUNC
 GENERIC_CLOSE_FUNC
 GENERIC_READ_FUNC
 GENERIC_WRITE_FUNC
+GENERIC_FLUSH_FUNC
 
 
 int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
@@ -67,9 +68,15 @@ int scanbtnd_get_button(scanbtnd_scanner_t* scanner)
 		return -EINVAL;
 
 	num_bytes = scanbtnd_write(scanner, (void*)bytes, 1);
-	if (num_bytes != 1) return 0;
+	if (num_bytes != 1)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 	num_bytes = scanbtnd_read(scanner, (void*)bytes, 4);
-	if (num_bytes != 4) return 0;
+	if (num_bytes != 4)  {
+		scanbtnd_flush(scanner);
+		return 0;
+	}
 	switch (bytes[2]) {
 	case 0x10: // scan button
 		return 1;
