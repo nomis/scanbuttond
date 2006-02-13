@@ -96,13 +96,13 @@ backends/libmustek.so.1.0: interface/libusbi.so.1.0 backends/mustek.c backends/m
 	ln -sf libmustek.so.1 backends/libmustek.so
 
 backends/libmeta.so.1.0: interface/libusbi.so.1.0 lib/loader.o backends/meta.c backends/meta.h backends/backend.h
-	$(CC) $(CFLAGS) -c -fPIC backends/meta.c -o backends/meta.o
+	$(CC) -c -fPIC $(CFLAGS) backends/meta.c -o backends/meta.o
 	$(CC) -shared -L./interface -Wl,-soname,libmeta.so.1 -Wl,-rpath,./interface:$(libdir) -o backends/libmeta.so.1.0 backends/meta.o lib/loader.o -ldl -lusbi
 	/sbin/ldconfig -n ./backends
 	ln -sf libmeta.so.1 backends/libmeta.so
 
 lib/loader.o: lib/loader.c lib/loader.h
-	$(CC) $(CFLAGS) -c -o lib/loader.o lib/loader.c
+	$(CC) -c -fPIC $(CFLAGS) -o lib/loader.o lib/loader.c
 
 scanbuttond: scanbuttond.o lib/loader.o
 	$(CC) -rdynamic -o scanbuttond scanbuttond.o lib/loader.o -ldl

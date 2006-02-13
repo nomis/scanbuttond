@@ -220,6 +220,9 @@ int scanbtnd_get_button(scanner_t* scanner)
 	int button;
 	int i;
 
+	if (!scanner->is_open)
+		return -EINVAL;
+
 	/*
 	The button status seems to be held in Register 0x2e of the
 	scanner's USB - IEEE1284 bridge

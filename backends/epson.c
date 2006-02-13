@@ -243,70 +243,16 @@ int epson_write(scanner_t* scanner, void* buffer, int bytecount)
 	return -1;
 }
 
-/*
-void epson_turn_off_lamp(scanner_t* scanner)
+
+void epson_flush(scanner_t* scanner)
 {
-	int bytes[255];
-	int params[64];
-	int num_bytes;
-	int rcv_len;
-	
-	switch (scanner->can_turn_off_lamp) {
-		case 0: // unsupported
-			return;
-		case -1: // undetermined
-			bytes[0] = 28;
-			bytes[1] = 73;
-			bytes[2] = 0;
-			num_bytes = epson_write(scanner, (void*)bytes, 2);
-			if (num_bytes != 2) return;
-			num_bytes = epson_read(scanner, (void*)bytes, 80);
-			if (num_bytes != 80) return;
-			if ((bytes[44] & 0x80) == 0x80) {
-				scanner->can_turn_off_lamp = 1;
-			} else {
-				scanner->can_turn_off_lamp = 0;
-				return;
-			}				
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			libusb_flush((libusb_device_t*)scanner->internal_dev_ptr);
+			break;
 	}
-	if (!scanner->can_turn_off_lamp) 
-		return;
-	
-	syslog(LOG_INFO, "trying to turn off lamp...");
-	
-	// request scanning parameters
-	bytes[0] = 28;
-	bytes[1] = 83;
-	bytes[2] = 0;
-	num_bytes = epson_write(scanner, (void*)bytes, 2);
-	if (num_bytes != 2) return;
-	num_bytes = epson_read(scanner, (void*)bytes, 4);
-	if (num_bytes != 4) return;
-	rcv_len = bytes[3] << 8 | bytes[2];
-	num_bytes = epson_read(scanner, (void*)bytes, rcv_len);
-	if (num_bytes != rcv_len) return;
-	memcpy(params, bytes, 64);
-	
-	// set lamp state to 0
-	syslog(LOG_INFO, "lamp state before change: %d", params[38]);
-	params[38] = 0;
-	
-	// set scanning parameters
-	bytes[0] = 28;
-	bytes[1] = 87;
-	bytes[2] = 0;
-	num_bytes = epson_write(scanner, (void*)bytes, 2);
-	if (num_bytes != 2) return;
-	num_bytes = epson_read(scanner, (void*)bytes, 1);
-	if (num_bytes != 1) return;
-	// TODO: check if we've received ACK?!?
-	num_bytes = epson_write(scanner, (void*)params, 64);
-	if (num_bytes != 64) return;
-	num_bytes = epson_read(scanner, (void*)bytes, 1);
-	if (num_bytes != 1) return;
-	// TODO: check if we've received ACK?!?
 }
-*/
+
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
@@ -322,12 +268,21 @@ int scanbtnd_get_button(scanner_t* scanner)
 		return -EINVAL;
 
 	num_bytes = epson_write(scanner, (void*)bytes, 2);
-	if (num_bytes != 2) return 0;
+	if (num_bytes != 2) {
+		epson_flush(scanner); 
+		return 0;
+	}
 	num_bytes = epson_read(scanner, (void*)bytes, 4);
-	if (num_bytes != 4) return 0;
+	if (num_bytes != 4) {
+		epson_flush(scanner);
+		return 0;
+	}
 	rcv_len = bytes[3] << 8 | bytes[2];
 	num_bytes = epson_read(scanner, (void*)bytes, rcv_len);
-	if (num_bytes != rcv_len) return 0;
+	if (num_bytes != rcv_len) {
+		epson_flush(scanner);
+		return 0;
+	}
 	return bytes[0];
 }
 

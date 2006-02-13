@@ -216,12 +216,22 @@ int snapscan_write(scanner_t* scanner, void* buffer, int bytecount)
 	return -1;
 }
 
+void snapscan_flush(scanner_t* scanner)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			libusb_flush((libusb_device_t*)scanner->internal_dev_ptr);
+			break;
+	}
+}
+
+
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
 	unsigned char bytes[255];
 	int num_bytes;
-	int button;
+	int button = 0;
 
 	bytes[0] = 0x03;
 	bytes[1] = 0x00;
@@ -229,28 +239,42 @@ int scanbtnd_get_button(scanner_t* scanner)
 	bytes[3] = 0x00;
 	bytes[4] = 0x14;
 	bytes[5] = 0x00;
+
+	if (!scanner->is_open)
+		return -EINVAL;
+
 	num_bytes = snapscan_write(scanner, (void*)bytes, 6);
-	if (num_bytes != 6) 
+	if (num_bytes != 6) {
+		snapscan_flush(scanner);
 		return 0;
+	}
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 8);
-	if (num_bytes != 8 || bytes[0] != 0xF9) 
+	if (num_bytes != 8 || bytes[0] != 0xF9) {
+		snapscan_flush(scanner);
 		return 0;
+	}
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 20);
-	if (num_bytes != 20 || bytes[0] != 0xF0 || bytes[17] != 0xF0) 
+	if (num_bytes != 20 || bytes[0] != 0xF0) {
+		snapscan_flush(scanner); 
 		return 0;
-	switch (bytes[18]) {
-		case 0x10: button = 1; break;
-		case 0x20: button = 2; break;
-		case 0x40: button = 3; break;
-		case 0x80: button = 4; break;
-		default: button = 0; break;
-	};
+	}
+	if (bytes[2] == 0x06) {
+		switch (bytes[18] & 0xF0) {
+			case 0x10: button = 1; break;
+			case 0x20: button = 2; break;
+			case 0x40: button = 3; break;
+			case 0x80: button = 4; break;
+			default: button = 0; break;
+		}
+	}
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 8);
-	if (num_bytes != 8 || bytes[0] != 0xFB) 
+	if (num_bytes != 8 || bytes[0] != 0xFB) {
+		snapscan_flush(scanner);
 		return 0;
+	}
 
 	return button;
 }

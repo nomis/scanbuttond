@@ -212,6 +212,15 @@ int plustek_write(scanner_t* scanner, void* buffer, int bytecount)
 	return -1;
 }
 
+void plustek_flush(scanner_t* scanner)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			libusb_flush((libusb_device_t*)scanner->internal_dev_ptr);
+			break;
+	}
+}
+
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
@@ -224,10 +233,19 @@ int scanbtnd_get_button(scanner_t* scanner)
 	bytes[2] = 0;
 	bytes[3] = 1;
 
+	if (!scanner->is_open)
+		return -EINVAL;
+
 	num_bytes = plustek_write(scanner, (void*)bytes, 4);
-	if (num_bytes != 4) return 0;
+	if (num_bytes != 4) {
+		plustek_flush(scanner);
+		return 0;
+	}
 	num_bytes = plustek_read(scanner, (void*)bytes, 1);
-	if (num_bytes != 1) return 0;
+	if (num_bytes != 1) {
+		plustek_flush(scanner);
+		return 0;
+	}
 	
 	switch (scanner->num_buttons) {
 	case 1: // not tested

@@ -212,6 +212,17 @@ int mustek_write(scanner_t* scanner, void* buffer, int bytecount)
 	return -1;
 }
 
+
+void mustek_flush(scanner_t* scanner)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			libusb_flush((libusb_device_t*)scanner->internal_dev_ptr);
+			break;
+	}
+}                    
+
+ 
 int scanbtnd_get_button(scanner_t* scanner)
 {
 	unsigned char bytes[255];
@@ -223,9 +234,15 @@ int scanbtnd_get_button(scanner_t* scanner)
 		return -EINVAL;
 
 	num_bytes = mustek_write(scanner, (void*)bytes, 1);
-	if (num_bytes != 1) return 0;
+	if (num_bytes != 1) {
+		mustek_flush(scanner);
+		return 0;
+	}
 	num_bytes = mustek_read(scanner, (void*)bytes, 4);
-	if (num_bytes != 4) return 0;
+	if (num_bytes != 4) {
+		mustek_flush(scanner);
+		return 0;
+	}
 	switch (bytes[2]) {
 	case 0x10: // scan button
 		return 1;

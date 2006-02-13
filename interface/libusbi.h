@@ -64,6 +64,9 @@ int libusb_read(libusb_device_t* device, void* buffer, int bytecount);
 
 int libusb_write(libusb_device_t* device, void* buffer, int bytecount);
 
+// flush bulk read queue
+void libusb_flush(libusb_device_t* device);
+
 int libusb_control_msg(libusb_device_t* device, int requesttype,
 					   int request, int value, int index, void* bytes, int size);
 
