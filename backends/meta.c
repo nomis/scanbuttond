@@ -167,7 +167,6 @@ int scanbtnd_init(void)
 	libusb_handle = libusb_init();
 
 	// read config file
-	char libdir[MAX_CONFIG_LINE];
 	char lib[MAX_CONFIG_LINE];
 	backend_t* backend;
 	FILE* f = fopen(config_file, "r");
@@ -176,8 +175,6 @@ int scanbtnd_init(void)
 			   config_file);
 		return -1;
 	}
-	fgets(libdir, MAX_CONFIG_LINE, f);
-	meta_strip_newline(libdir);
 	while (fgets(lib, MAX_CONFIG_LINE, f)) {
 		meta_strip_newline(lib);
 		if (strlen(lib)==0) continue;
