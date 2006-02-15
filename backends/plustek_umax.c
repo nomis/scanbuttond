@@ -23,9 +23,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <syslog.h>
-#include "scanbuttond.h"
-#include "interface/libusbi.h"
-#include "backends/plustek_umax.h"
+#include "scanbuttond/scanbuttond.h"
+#include "scanbuttond/libusbi.h"
+#include "plustek_umax.h"
 
 static char* backend_name = "Plustek USB for UMAX";
 

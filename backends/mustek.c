@@ -23,9 +23,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <syslog.h>
-#include "scanbuttond.h"
-#include "interface/libusbi.h"
-#include "backends/mustek.h"
+#include "scanbuttond/scanbuttond.h"
+#include "scanbuttond/libusbi.h"
+#include "mustek.h"
 
 static char* backend_name = "Mustek USB";
 

@@ -2,10 +2,10 @@ People behind this project
 --------------------------
 
 * Bernhard Stiftner <root84@users.sourceforge.net>
-  (Main author, project admin)
+  (main author, project admin)
 
 * Dirk Wriedt
-  (Niash backend)
+  (niash backend)
 
 * J. Javier Maestro
   (sniffing snapscan buttons)
@@ -28,3 +28,5 @@ People behind this project
 * David Froehlich
   (Epson Perfection 1260 support/testing)
 
+* Milan Zamazal
+  (snapscan testing)

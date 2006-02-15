@@ -27,17 +27,21 @@
 #include <syslog.h>
 #include <errno.h>
 #include <getopt.h>
-#include "lib/loader.h"
+#include "scanbuttond/config.h"
+#include "scanbuttond/scanbuttond.h"
+#include "scanbuttond/loader.h"
 
-#define VERSION						"0.2.2"
-#define DEF_BACKEND_FILENAME		"/usr/local/lib/scanbuttond/libmeta.so"
-#define DEF_BUTTONPRESSED_SCRIPT	"/etc/scanbuttond/buttonpressed.sh"
-#define DEF_INITSCANNER_SCRIPT		"/etc/scanbuttond/initscanner.sh"
-#define DEF_POLL_DELAY				333000L
-#define MIN_POLL_DELAY				1000L
-#define DEF_RETRY_DELAY				2000000L
-#define MIN_RETRY_DELAY				10000L
-#define BUF_SIZE					256
+#define STRINGIFY1(x)			#x
+#define STRINGIFY(x)			STRINGIFY1(x)
+
+#define DEF_BACKEND_FILENAME		STRINGIFY(LIB_DIR) "/libscanbtnd-backend_meta.so"
+#define DEF_BUTTONPRESSED_SCRIPT	STRINGIFY(CFG_DIR) "/buttonpressed.sh"
+#define DEF_INITSCANNER_SCRIPT		STRINGIFY(CFG_DIR) "/initscanner.sh"
+#define DEF_POLL_DELAY			333000L
+#define MIN_POLL_DELAY			1000L
+#define DEF_RETRY_DELAY			2000000L
+#define MIN_RETRY_DELAY			10000L
+#define BUF_SIZE			256
 
 static char* connection_names[NUM_CONNECTIONS] =
 { "none", "libusb" };

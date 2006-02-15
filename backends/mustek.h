@@ -19,6 +19,6 @@
 #ifndef __MUSTEK_H_INCLUDED
 #define __MUSTEK_H_INCLUDED
 
-#include "backend.h"
+#include "scanbuttond/backend.h"
 
 #endif

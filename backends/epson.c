@@ -25,9 +25,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <syslog.h>
-#include "scanbuttond.h"
-#include "interface/libusbi.h"
-#include "backends/epson.h"
+#include "scanbuttond/scanbuttond.h"
+#include "scanbuttond/libusbi.h"
+#include "epson.h"
 
 #define	ESC        	0x1B		/* ASCII value for ESC */
 

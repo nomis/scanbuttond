@@ -1,3 +1,12 @@
+0.2.3, released Feb 16, 2006
+----------------------------
+  * fixed snapscan backend (protocol sync)
+  * added mustek and plustek_umax backends
+  * support for some new scanners
+  * Switched to autoconf/automake
+  * Changed directory/file layout
+
+
 0.2.2, released Jun 6, 2005
 ---------------------------
   * added snapscan backend

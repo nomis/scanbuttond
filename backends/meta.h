@@ -19,7 +19,7 @@
 #ifndef __META_H_INCLUDED
 #define __META_H_INCLUDED
 
-#include "backend.h"
-#include "lib/loader.h"
+#include "scanbuttond/backend.h"
+#include "scanbuttond/loader.h"
 
 #endif

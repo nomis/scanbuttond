@@ -20,6 +20,6 @@
 #ifndef __PLUSTEK_UMAX_H_INCLUDED
 #define __PLUSTEK_UMAX_H_INCLUDED
 
-#include "backend.h"
+#include "scanbuttond/backend.h"
 
 #endif
