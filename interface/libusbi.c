@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <usb.h>
 #include <syslog.h>
-#include "libusbi.h"
+#include "scanbuttond/libusbi.h"
 
 #define TIMEOUT	   	10 * 1000	/* 10 seconds */
 

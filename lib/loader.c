@@ -23,7 +23,7 @@
 #include <syslog.h>
 #include <dlfcn.h>
 #include <errno.h>
-#include "loader.h"
+#include "scanbuttond/loader.h"
 
 backend_t* load_backend(const char* filename)
 {

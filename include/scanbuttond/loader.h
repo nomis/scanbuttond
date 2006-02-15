@@ -19,7 +19,7 @@
 #ifndef __LOADER_H_INCLUDED
 #define __LOADER_H_INCLUDED
 
-#include "scanbuttond.h"
+#include "scanbuttond/scanbuttond.h"
 
 struct backend;
 typedef struct backend backend_t;

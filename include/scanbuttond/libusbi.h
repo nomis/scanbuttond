@@ -20,7 +20,7 @@
 #define __LIBUSBI_H_INCLUDED
 
 #include <usb.h>
-#include "scanbuttond.h"
+#include "scanbuttond/scanbuttond.h"
 
 struct libusb_device;
 typedef struct libusb_device libusb_device_t;
