@@ -28,11 +28,9 @@
 #include <errno.h>
 #include <getopt.h>
 #include "scanbuttond/config.h"
+#include "scanbuttond/common.h"
 #include "scanbuttond/scanbuttond.h"
 #include "scanbuttond/loader.h"
-
-#define STRINGIFY1(x)			#x
-#define STRINGIFY(x)			STRINGIFY1(x)
 
 #define DEF_BACKEND_FILENAME		STRINGIFY(LIB_DIR) "/libscanbtnd-backend_meta.so"
 #define DEF_BUTTONPRESSED_SCRIPT	STRINGIFY(CFG_DIR) "/buttonpressed.sh"
@@ -82,7 +80,7 @@ void shutdown(void)
 	syslog(LOG_INFO, "shutting down...");
 	backend->scanbtnd_exit();
 	unload_backend(backend);
-	syslog(LOG_INFO, "shutdown complete");
+	syslog(LOG_DEBUG, "shutdown complete");
 	closelog();
 }
 
@@ -97,20 +95,6 @@ void sighandler(int i)
 }
 
 
-// Executes an external program as an independent child
-void execute_as_child(const char* program)
-{
-	if (!program) return;
-	int pid = fork();
-	if (pid == 0) {
-		system(program);
-		exit(EXIT_SUCCESS);
-	} else if (pid < 0) {
-		syslog(LOG_ERR, "fork() failed, cannot execute external program!");
-	}
-}
-
-
 // Executes an external program and wait until it terminates
 void execute_and_wait(const char* program)
 {
@@ -119,9 +103,11 @@ void execute_and_wait(const char* program)
 	if (pid == 0) {
 		system(program);
 		exit(EXIT_SUCCESS);
-	} else {
+	} else if (pid > 0) {
 		int status;
 		waitpid(pid, &status, 0);
+	} else if (pid < 0) {
+		syslog(LOG_ERR, "fork() failed, cannot execute external program!");
 	}
 }
 
@@ -354,7 +340,6 @@ int main(int argc, char** argv)
 				break;
 			}
 
-			syslog(LOG_DEBUG, "query button");
 			button = backend->scanbtnd_get_button(scanner);
 			backend->scanbtnd_close(scanner);
 
@@ -364,7 +349,7 @@ int main(int argc, char** argv)
 				char cmd[BUF_SIZE];
 				snprintf(cmd, BUF_SIZE, "%s %d %s", buttonpressed_script, button,
 						 backend->scanbtnd_get_sane_device_descriptor(scanner));
-				execute_as_child(cmd);
+				execute_and_wait(cmd);
 			}
 			if ((button == 0) && (scanner->lastbutton > 0)) {
 				syslog(LOG_INFO, "button %d has been released.", scanner->lastbutton);

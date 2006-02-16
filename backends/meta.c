@@ -23,15 +23,13 @@
 #include <syslog.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include "scanbuttond/common.h"
 #include "scanbuttond/scanbuttond.h"
 #include "scanbuttond/libusbi.h"
 #include "meta.h"
 
 #define MAX_CONFIG_LINE 255
 #define MAX_SCANNERS_PER_BACKEND 16
-
-#define STRINGIFY1(x)                   #x
-#define STRINGIFY(x)                    STRINGIFY1(x)
 
 static char* backend_name = "Dynamic Module Loader";
 static char* config_file = STRINGIFY(CFG_DIR) "/meta.conf";
