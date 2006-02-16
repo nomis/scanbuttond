@@ -37,9 +37,9 @@ Since version 0.2.3, scanbuttond uses the GNU autotools for compilation &
 installation. Please see the file INSTALL for generic instructions on using
 them.
 
-If you are using a CVS version instead of a release, you may have to prepare the
-autoconf/automake mechanism, usually by running 
-"aclocal; autoconf; automake -a; libtoolize". 
+If you are using a CVS version instead of a release, you may have to bootstrap
+the package. This can be done by running:
+"aclocal; autoconf; autoheader; automake -a; libtoolize". 
 You should now be able to run ./configure and make.
 
 After you have installed scanbuttond, you should run "ldconfig" to update the
