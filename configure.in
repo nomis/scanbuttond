@@ -12,4 +12,4 @@ AC_CHECK_HEADERS(errno.h string.h syslog.h unistd.h dlfcn.h usb.h)
 
 CFLAGS="${CFLAGS} -DCFG_DIR=\$(pkgsysconfdir) -DLIB_DIR=\$(libdir)"
 
-AC_OUTPUT(Makefile interface/Makefile backends/Makefile scripts/Makefile)
+AC_OUTPUT(Makefile contrib/Makefile interface/Makefile backends/Makefile scripts/Makefile)

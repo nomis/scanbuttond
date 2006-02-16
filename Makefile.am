@@ -1,4 +1,4 @@
-SUBDIRS = interface backends scripts .
+SUBDIRS = contrib interface backends scripts .
 
 pkgsysconfdir = $(sysconfdir)/$(PACKAGE)
 
