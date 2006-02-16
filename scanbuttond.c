@@ -98,17 +98,7 @@ void sighandler(int i)
 // Executes an external program and wait until it terminates
 void execute_and_wait(const char* program)
 {
-	if (!program) return;
-	int pid = fork();
-	if (pid == 0) {
-		system(program);
-		exit(EXIT_SUCCESS);
-	} else if (pid > 0) {
-		int status;
-		waitpid(pid, &status, 0);
-	} else if (pid < 0) {
-		syslog(LOG_ERR, "fork() failed, cannot execute external program!");
-	}
+	system(program);
 }
 
 
