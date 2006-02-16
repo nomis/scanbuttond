@@ -1,6 +1,6 @@
 // epson.c: Epson ESC/I device backend
 // This file is part of scanbuttond.
-// Copyleft )c( 2004-2005 by Bernhard Stiftner
+// Copyleft )c( 2004-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as

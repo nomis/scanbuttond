@@ -1,6 +1,6 @@
 // scanbuttond.c: the actual daemon ("frontend")
 // This file is part of scanbuttond.
-// Copyleft )c( 2004-2005 by Bernhard Stiftner
+// Copyleft )c( 2004-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -127,7 +127,7 @@ void list_devices(scanner_t* devices)
 void show_version(void)
 {
 	printf("This is scanbuttond, version %s\n", VERSION);
-	printf("Copyleft )c( 2004-2005 by Bernhard Stiftner and contributors.\n");
+	printf("Copyleft )c( 2004-2006 by Bernhard Stiftner and contributors.\n");
 	printf("Scanbuttond comes with ABSOLUTELY NO WARRANTY!\n");
 	printf("This is free software, and you are welcome to redistribute it\n");
 	printf("under certain conditions; see the file COPYING for details.\n");
@@ -137,6 +137,7 @@ void show_version(void)
 void show_usage(void)
 {
 	printf("Usage: scanbuttond [OPTION]...\n\n");
+	printf("Starts a script when a button on a scanner has been pressed.\n\n");
 	printf("Options:\n");
 	printf("  -f, --foreground            Run in foreground instead of background\n");
 	printf("  -b, --backend=FILE          Use the specified backend library file\n");
