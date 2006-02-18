@@ -25,6 +25,7 @@
 #include <errno.h>
 
 #include "meta.h"
+#include "scanbuttond/common.h"
 #include "scanbuttond/backend_loader.h"
 #include "scanbuttond/interface_usb.h"
 
@@ -32,7 +33,8 @@
 #define MAX_SCANNERS_PER_BACKEND 16
 
 static char* backend_name = "Dynamic Module Loader";
-static char* config_file = "/etc/scanbuttond/meta.conf";
+static char* config_file = STRINGIFY(CFG_DIR) "/meta.conf";
+static char* lib_dir = STRINGIFY(LIB_DIR);
 
 
 scanbtnd_libusb_handle_t* libusb_handle;
@@ -158,7 +160,6 @@ int scanbtnd_init(void)
 	libusb_handle = scanbtnd_libusb_init();
 
 	// read config file
-	char libdir[MAX_CONFIG_LINE];
 	char lib[MAX_CONFIG_LINE];
 	scanbtnd_backend_t* backend;
 	FILE* f = fopen(config_file, "r");
@@ -167,16 +168,13 @@ int scanbtnd_init(void)
 			   config_file);
 		return -1;
 	}
-	fgets(libdir, MAX_CONFIG_LINE, f);
-	meta_strip_newline(libdir);
 	while (fgets(lib, MAX_CONFIG_LINE, f)) {
 		meta_strip_newline(lib);
 		if (strlen(lib)==0) continue;
-		char *libpath = (char*)malloc(strlen(libdir) + strlen(lib) + 8);
-		strcpy(libpath, libdir);
-		strcat(libpath, "/lib");
+		char* libpath = (char*)malloc(strlen(libdir) + strlen(lib) + 2);
+		strcpy(libpath, lib_dir);
+		strcat(libpath, "/");
 		strcat(libpath, lib);
-		strcat(libpath, ".so");
 		backend = scanbtnd_load_backend(libpath);
 		free(libpath);
 		if (backend != NULL && meta_attach_backend(backend)==0) {

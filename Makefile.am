@@ -1,1 +1,1 @@
-SUBDIRS = interface backends
+SUBDIRS = contrib interface backends scripts .
