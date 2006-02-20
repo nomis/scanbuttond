@@ -33,7 +33,7 @@
 
 static char* backend_name = "Epson USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 14
+#define NUM_SUPPORTED_USB_DEVICES 15
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
@@ -50,8 +50,9 @@ static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	{ 0x04B8, 0x011B, 4 },	// Epson Perfection 2400
 	{ 0x04B8, 0x0112, 1 },	// Epson Perfection 2450
 	{ 0x04B8, 0x011C, 1 },	// Epson Perfection 3200
-	{ 0x04B8, 0x0802, 1 }	// Epson CX3200 (note: is the button number
+	{ 0x04B8, 0x0802, 1 },	// Epson CX3200 (note: is the button number
 				// really correct?)
+	{ 0x04B8, 0x0106, 1 }   // Epson Stylus Scan 2500
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
@@ -68,7 +69,8 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Epson", "Perfection 2400"},
 	{ "Epson", "Perfection 2450"},
 	{ "Epson", "Perfection 3200"},
-	{ "Epson", "Stylus CX3200"}
+	{ "Epson", "Stylus CX3200"},
+	{ "Epson", "Stylus Scan 2500"}
 };
 
 
