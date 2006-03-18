@@ -41,7 +41,7 @@ static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	   { "Epson", "Perfection 2480 / 2580" },
 	   { "Epson", "Perfection 1670" },
-	   { "Epson", "Perfection 3490" }
+	   { "Epson", "Perfection 3490 / 3590" }
 };
 
 

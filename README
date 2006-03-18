@@ -85,6 +85,7 @@ Supported by the epson backend (via libusb):
 * Epson Perfection 2450 (expected to work)
 * Epson Perfection 3200 (expected to work)
 * Epson CX3200 (working, tested)
+* Epson Stylus Scan 2500 (working, tested)
 
 Supported by the mustek backend (via libusb):
 * Mustek BearPaw 2448TA (experimental)
@@ -112,6 +113,8 @@ Supported by the snapscan backend (via libusb):
 * Epson Perfection 2480 (expected to work)
 * Epson Perfection 2580 (expected to work)
 * Epson Perfection 1670 (working, tested)
+* Epson Perfection 3490 (expected to work)
+* Epson Perfection 3590 (working, tested)
 
 Note: the mustek, niash, plustek, plustek_umax and snapscan backends were
 implemented using information gathered by "sniffing" the communication between
