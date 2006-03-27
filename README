@@ -77,7 +77,7 @@ Supported by the epson backend (via libusb):
 * Epson Perfection 636U (expected to work)
 * Epson Perfection 640 (expected to work)
 * Epson Perfection 1200U (expected to work)
-* Epson Perfection 1240 (expected to work)
+* Epson Perfection 1240 (working, tested)
 * Epson Perfection 1640 (expected to work)
 * Epson Perfection 1650 (working, tested)
 * Epson Perfection 1660 (working, tested)
