@@ -32,7 +32,7 @@
 #include "scanbuttond/scanbuttond.h"
 #include "scanbuttond/loader.h"
 
-#define DEF_BACKEND_FILENAME		STRINGIFY(LIB_DIR) "/libscanbtnd-backend_meta.so"
+#define DEF_BACKEND_FILENAME		"libscanbtnd-backend_meta"
 #define DEF_BUTTONPRESSED_SCRIPT	STRINGIFY(CFG_DIR) "/buttonpressed.sh"
 #define DEF_INITSCANNER_SCRIPT		STRINGIFY(CFG_DIR) "/initscanner.sh"
 #define DEF_POLL_DELAY			333000L
@@ -58,15 +58,15 @@ static struct option const long_opts[] = {
 };
 
 
-char* buttonpressed_script;
-char* initscanner_script;
-char* backend_filename;
-backend_t* backend;
-long poll_delay;
-long retry_delay;
-int daemonize;
-int killed = 0;
-char* path;
+static char* buttonpressed_script;
+static char* initscanner_script;
+static char* backend_filename;
+static backend_t* backend;
+static long poll_delay;
+static long retry_delay;
+static int daemonize;
+static int killed = 0;
+static char* path;
 
 
 char* scanbtnd_get_connection_name(int connection)
@@ -77,9 +77,15 @@ char* scanbtnd_get_connection_name(int connection)
 
 void shutdown(void)
 {
+	printf("shutdown\n");
 	syslog(LOG_INFO, "shutting down...");
+	printf("backend->exit\n");
 	backend->scanbtnd_exit();
-	unload_backend(backend);
+	printf("unload backend\n");
+	scanbtnd_unload_backend(backend);
+	printf("exit loader\n");
+	scanbtnd_loader_exit();
+	printf("done\n");
 	syslog(LOG_DEBUG, "shutdown complete");
 	closelog();
 }
@@ -217,9 +223,15 @@ int main(int argc, char** argv)
 
 	process_options(argc, argv);
 
-	backend = load_backend(backend_filename);
+	if (scanbtnd_loader_init() != 0) {
+		printf("Could not initialize module loader!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	backend = scanbtnd_load_backend(backend_filename);
 	if (!backend) {
 		printf("Unable to load backend library \"%s\"!\n", backend_filename);
+		scanbtnd_loader_exit();
 		exit(EXIT_FAILURE);
 	}
 
@@ -292,7 +304,7 @@ int main(int argc, char** argv)
 	signal(SIGHUP, &sighandler);
 	signal(SIGINT, &sighandler);
 	signal(SIGSEGV, &sighandler);
-	signal(SIGCLD, SIG_IGN);
+	signal(SIGCHLD, SIG_IGN);
 
 	syslog(LOG_INFO, "scanbuttond started");
 
