@@ -9,5 +9,4 @@
 # Example:
 # scanimage -n
 # or
-# sane-find-scanners
-
+# sane-find-scanner
