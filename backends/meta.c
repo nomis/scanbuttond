@@ -127,9 +127,7 @@ void meta_detach_backend(backend_t* backend, backend_t* prev_backend)
 		meta_backends = backend->next;
 	else
 		syslog(LOG_WARNING, "meta-backend: detach backend: invalid arguments!");
-	printf("Y%s: exit\n", backend->scanbtnd_get_backend_name());
 	backend->scanbtnd_exit();
-	printf("Y%s: unload\n", backend->scanbtnd_get_backend_name());
 	scanbtnd_unload_backend(backend);
 }
 
@@ -276,15 +274,10 @@ const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 int scanbtnd_exit(void)
 {
 	syslog(LOG_INFO, "meta-backend: exit");
-	printf("Xdetach_scanners\n");
 	meta_detach_scanners();
-	printf("Xdetach_backends\n");
 	meta_detach_backends();
-	printf("Xlibusb_exit\n");
 	libusb_exit(libusb_handle);
-	printf("Xloader_exit\n");
 	scanbtnd_loader_exit();
-	printf("Xloader_done\n");
 	return 0;
 }
 

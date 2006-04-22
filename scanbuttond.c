@@ -77,15 +77,10 @@ char* scanbtnd_get_connection_name(int connection)
 
 void shutdown(void)
 {
-	printf("shutdown\n");
 	syslog(LOG_INFO, "shutting down...");
-	printf("backend->exit\n");
 	backend->scanbtnd_exit();
-	printf("unload backend\n");
 	scanbtnd_unload_backend(backend);
-	printf("exit loader\n");
 	scanbtnd_loader_exit();
-	printf("done\n");
 	syslog(LOG_DEBUG, "shutdown complete");
 	closelog();
 }

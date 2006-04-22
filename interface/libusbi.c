@@ -45,7 +45,7 @@ libusb_handle_t* libusb_init(void)
 }
 
 
-int libusb_search_interface(struct usb_device* device)
+static int libusb_search_interface(struct usb_device* device)
 {
 	int found = 0;
 	int interface;
@@ -71,7 +71,7 @@ int libusb_search_interface(struct usb_device* device)
 }
 
 
-int libusb_search_in_endpoint(struct usb_device* device)
+static int libusb_search_in_endpoint(struct usb_device* device)
 {
 	int usb_in_ep = 0;
 	int usb_out_ep = 0;
@@ -102,7 +102,7 @@ int libusb_search_in_endpoint(struct usb_device* device)
 }
 
 
-int libusb_search_out_endpoint(struct usb_device* device)
+static int libusb_search_out_endpoint(struct usb_device* device)
 {
 	int usb_in_ep = 0;
 	int usb_out_ep = 0;
@@ -133,7 +133,7 @@ int libusb_search_out_endpoint(struct usb_device* device)
 }
 
 
-void libusb_attach_device(struct usb_device* device, libusb_handle_t* handle)
+static void libusb_attach_device(struct usb_device* device, libusb_handle_t* handle)
 {
 	libusb_device_t* libusb_device = (libusb_device_t*)malloc(sizeof(libusb_device_t));
 	libusb_device->vendorID = device->descriptor.idVendor;
@@ -170,7 +170,7 @@ void libusb_attach_device(struct usb_device* device, libusb_handle_t* handle)
 }
 
 
-void libusb_detach_devices(libusb_handle_t* handle)
+static void libusb_detach_devices(libusb_handle_t* handle)
 {
 	libusb_device_t* next;
 	while (handle->devices != NULL) {
@@ -329,9 +329,13 @@ int libusb_control_msg(libusb_device_t* device, int requesttype, int request,
 void libusb_exit(libusb_handle_t* handle)
 {
 	invocation_count--;
-	if (invocation_count == 0)
-		syslog(LOG_INFO, "libusbi: shutting down...");
+	if (invocation_count < 0) {
+		syslog(LOG_WARN, "libusbi: libusb_exit called more often than libusb_init!!!");				
+	}
 	libusb_detach_devices(handle);
 	free(handle);
+	if (invocation_count == 0) {
+		syslog(LOG_INFO, "libusbi: shutting down...");
+	}
 }
 

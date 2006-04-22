@@ -280,9 +280,7 @@ const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 int scanbtnd_exit(void)
 {
 	syslog(LOG_INFO, "plustek-umax-backend: exit");
-	printf("plustek_detach\n");
 	plustek_detach_scanners();
-	printf("plustek_usb_exit\n");
 	libusb_exit(libusb_handle);
 	return 0;
 }
