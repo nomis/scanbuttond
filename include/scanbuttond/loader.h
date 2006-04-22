@@ -1,6 +1,6 @@
 // loader.h: dynamic backend library loader
 // This file is part of scanbuttond.
-// Copyleft )c( 2005 by Bernhard Stiftner
+// Copyleft )c( 2005-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -21,6 +21,10 @@
 
 #include "scanbuttond/scanbuttond.h"
 
+#ifndef MODULE_PATH_ENV
+#  define MODULE_PATH_ENV        "SCANBUTTOND_MODULE_PATH"
+#endif
+
 struct backend;
 typedef struct backend backend_t;
 
@@ -39,8 +43,12 @@ struct backend {
 	backend_t* next;
 };
 
-backend_t* load_backend(const char* filename);
+int scanbtnd_loader_init(void);
 
-void unload_backend(backend_t* backend);
+void scanbtnd_loader_exit(void);
+
+backend_t* scanbtnd_load_backend(const char* filename);
+
+void scanbtnd_unload_backend(backend_t* backend);
 
 #endif
