@@ -330,7 +330,7 @@ void libusb_exit(libusb_handle_t* handle)
 {
 	invocation_count--;
 	if (invocation_count < 0) {
-		syslog(LOG_WARN, "libusbi: libusb_exit called more often than libusb_init!!!");				
+		syslog(LOG_WARNING, "libusbi: libusb_exit called more often than libusb_init!!!");				
 	}
 	libusb_detach_devices(handle);
 	free(handle);
