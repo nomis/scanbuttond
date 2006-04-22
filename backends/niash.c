@@ -48,8 +48,8 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 };
 
 
-libusb_handle_t* libusb_handle;
-scanner_t* niash_scanners = NULL;
+static libusb_handle_t* libusb_handle;
+static scanner_t* niash_scanners = NULL;
 
 
 // returns -1 if the scanner is unsupported, or the index of the

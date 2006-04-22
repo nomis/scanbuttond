@@ -41,8 +41,8 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 };
 
 
-libusb_handle_t* libusb_handle;
-scanner_t* plustek_scanners = NULL;
+static libusb_handle_t* libusb_handle;
+static scanner_t* plustek_scanners = NULL;
 
 
 // returns -1 if the scanner is unsupported, or the index of the
@@ -280,7 +280,9 @@ const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 int scanbtnd_exit(void)
 {
 	syslog(LOG_INFO, "plustek-umax-backend: exit");
+	printf("plustek_detach\n");
 	plustek_detach_scanners();
+	printf("plustek_usb_exit\n");
 	libusb_exit(libusb_handle);
 	return 0;
 }

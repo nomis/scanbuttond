@@ -33,11 +33,10 @@
 
 static char* backend_name = "Dynamic Module Loader";
 static char* config_file = STRINGIFY(CFG_DIR) "/meta.conf";
-static char* lib_dir = STRINGIFY(LIB_DIR);
 
-libusb_handle_t* libusb_handle;
-scanner_t* meta_scanners = NULL;
-backend_t* meta_backends = NULL;
+static libusb_handle_t* libusb_handle;
+static scanner_t* meta_scanners = NULL;
+static backend_t* meta_backends = NULL;
 
 
 const char* scanbtnd_get_backend_name(void)
@@ -106,7 +105,7 @@ void meta_detach_scanners(void)
 
 int meta_attach_backend(backend_t* backend)
 {
-  // don't load another meta backend
+	// don't load another meta backend
 	if (strcmp(backend->scanbtnd_get_backend_name(), scanbtnd_get_backend_name())==0) {
 		syslog(LOG_WARNING, "meta-backend: refusing to load another meta backend!");
 		return -1;
@@ -128,8 +127,10 @@ void meta_detach_backend(backend_t* backend, backend_t* prev_backend)
 		meta_backends = backend->next;
 	else
 		syslog(LOG_WARNING, "meta-backend: detach backend: invalid arguments!");
+	printf("Y%s: exit\n", backend->scanbtnd_get_backend_name());
 	backend->scanbtnd_exit();
-	unload_backend(backend);
+	printf("Y%s: unload\n", backend->scanbtnd_get_backend_name());
+	scanbtnd_unload_backend(backend);
 }
 
 
@@ -158,11 +159,22 @@ void meta_strip_newline(char* str)
 
 int scanbtnd_init(void)
 {
+	int error;
 	meta_scanners = NULL;
 	meta_backends = NULL;
 
 	syslog(LOG_INFO, "meta-backend: init");
+	error = scanbtnd_loader_init();
+	if (error != 0) {
+		syslog(LOG_ERR, "meta-backend: could not init module loader!");
+		return error;
+	}
 	libusb_handle = libusb_init();
+	if (!libusb_handle) {
+		syslog(LOG_ERR, "meta-backend: could not init libusb!");
+		scanbtnd_loader_exit();
+		return 1;
+	}
 
 	// read config file
 	char lib[MAX_CONFIG_LINE];
@@ -176,14 +188,20 @@ int scanbtnd_init(void)
 	while (fgets(lib, MAX_CONFIG_LINE, f)) {
 		meta_strip_newline(lib);
 		if (strlen(lib)==0) continue;
+		/*
 		char* libpath = (char*)malloc(strlen(lib) + strlen(lib_dir) + 2);
 		strcpy(libpath, lib_dir);
 		strcat(libpath, "/");
 		strcat(libpath, lib);
 		backend = load_backend(libpath);
 		free(libpath);
-		if (backend != NULL && meta_attach_backend(backend)==0) {
-			meta_attach_scanners(backend->scanbtnd_get_supported_devices(),
+		*/
+		backend = scanbtnd_load_backend(lib);
+		if (backend == NULL) {
+			syslog(LOG_ERR, "meta-backend: could not load '%s'", lib);
+		} else if (meta_attach_backend(backend)==0) {
+			meta_attach_scanners(
+				backend->scanbtnd_get_supported_devices(),
 				backend);
 		}
 	}
@@ -220,8 +238,8 @@ const scanner_t* scanbtnd_get_supported_devices(void)
 
 int scanbtnd_open(scanner_t* scanner)
 {
-  // if devices have been added/removed, return -ENODEV to
-  // make scanbuttond update its device list
+	// if devices have been added/removed, return -ENODEV to
+	// make scanbuttond update its device list
 	if (libusb_get_changed_device_count() != 0) {
 		return -ENODEV;
 	}
@@ -258,9 +276,15 @@ const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 int scanbtnd_exit(void)
 {
 	syslog(LOG_INFO, "meta-backend: exit");
+	printf("Xdetach_scanners\n");
 	meta_detach_scanners();
+	printf("Xdetach_backends\n");
 	meta_detach_backends();
+	printf("Xlibusb_exit\n");
 	libusb_exit(libusb_handle);
+	printf("Xloader_exit\n");
+	scanbtnd_loader_exit();
+	printf("Xloader_done\n");
 	return 0;
 }
 
