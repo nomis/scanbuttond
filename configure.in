@@ -1,4 +1,4 @@
-AC_INIT([scanbuttond], [0.2.3], [root84@users.soureforge.net])
+AC_INIT([scanbuttond], [0.2.3.1], [root84@users.soureforge.net])
 AC_CONFIG_HEADERS([include/scanbuttond/config.h])
 AM_INIT_AUTOMAKE
 

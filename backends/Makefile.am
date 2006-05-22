@@ -4,7 +4,8 @@ lib_LTLIBRARIES = 	libscanbtnd-backend_epson.la \
 			libscanbtnd-backend_niash.la \
 			libscanbtnd-backend_plustek.la \
 			libscanbtnd-backend_plustek_umax.la \
-			libscanbtnd-backend_snapscan.la
+			libscanbtnd-backend_snapscan.la \
+			libscanbtnd-backend_artec_eplus48u.la
 
 libscanbtnd_backend_epson_la_SOURCES = epson.c epson.h
 libscanbtnd_backend_epson_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
@@ -27,6 +28,9 @@ libscanbtnd_backend_plustek_umax_la_LDFLAGS = -module -version-info 1:0:0
 libscanbtnd_backend_snapscan_la_SOURCES = snapscan.c snapscan.h
 libscanbtnd_backend_snapscan_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
 libscanbtnd_backend_snapscan_la_LDFLAGS = -module -version-info 1:0:0
+libscanbtnd_backend_artec_eplus48u_la_SOURCES = artec_eplus48u.c artec_eplus48u.h
+libscanbtnd_backend_artec_eplus48u_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
+libscanbtnd_backend_artec_eplus48u_la_LDFLAGS = -module -version-info 1:0:0
 
 pkgsysconfdir = $(sysconfdir)/$(PACKAGE)
 pkgsysconf_DATA = meta.conf
