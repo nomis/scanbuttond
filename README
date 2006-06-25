@@ -103,7 +103,7 @@ Supported by the plustek backend (via libusb):
 * Canon CanoScan LiDE 20 (experimental)
 * Canon CanoScan LiDE 25 (experimental)
 * Canon CanoScan LiDE 30 (experimental)
-* Epson Perfection 1260 (experimental)
+* Epson Perfection 1260 (working, tested)
 * Hewlett-Packard ScanJet 2200c (experimental)
 
 Supported by the plustek_umax backend (via libusb):
