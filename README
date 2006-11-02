@@ -115,6 +115,7 @@ Supported by the snapscan backend (via libusb):
 * Epson Perfection 1670 (working, tested)
 * Epson Perfection 3490 (working, tested)
 * Epson Perfection 3590 (working, tested)
+* Epson Perfection 1270 (working, tested)
 
 Note: the mustek, niash, plustek, plustek_umax and snapscan backends were
 implemented using information gathered by "sniffing" the communication between
