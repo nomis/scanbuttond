@@ -47,6 +47,12 @@ cache of the dynamic linker. If you forget to do that, scanbuttond probably
 won't be able to load the backend modules or resolve the dependencies between
 them!
 
+Please do not forget to set up your configuration files if you have
+installed scanbuttond for the first time. They are usually located in the
+directory "/usr/local/etc/scanbuttond". To get started, rename
+"buttonpressed.sh.example" to "buttonpressed.sh" and
+"initscanner.sh.example" to "initscanner.sh".
+
 
 Usage
 -----
