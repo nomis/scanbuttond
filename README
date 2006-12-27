@@ -93,6 +93,13 @@ Supported by the epson backend (via libusb):
 * Epson CX3200 (working, tested)
 * Epson Stylus Scan 2500 (working, tested)
 
+Supported by the hp3900 backend (via libusb):
+* HP Scanjet 3800
+* HP Scanjet 3970
+* HP Scanjet 4070
+* HP Scanjet 4370
+* Umax Astra 4900/4950
+
 Supported by the mustek backend (via libusb):
 * Mustek BearPaw 2448TA (experimental)
 

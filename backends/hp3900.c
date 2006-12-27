@@ -1,6 +1,6 @@
 // hp3900.c: RTS8822 chipset based devices backend
 // This file is part of scanbuttond.
-// Copyleft )c( 2006 by Jonathan Bravo Lopez
+// Copyleft )c( 2007 by Jonathan Bravo Lopez
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -28,19 +28,23 @@
 
 static char* backend_name = "HP3900 USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 3
+#define NUM_SUPPORTED_USB_DEVICES 5
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
+	{ 0x03f0, 0x2605, 3 },  // HP Scanjet 3800
 	{ 0x03f0, 0x2305, 4 },	// HP Scanjet 3970
 	{ 0x03f0, 0x2405, 4 },	// HP Scanjet 4070
 	{ 0x03f0, 0x4105, 4 },	// HP Scanjet 4370
+	{ 0x06dc, 0x0020, 4 }	// Umax Astra 4900/4950
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
+	{ "Hewlett-Packard", "ScanJet 3800" },
 	{ "Hewlett-Packard", "ScanJet 3970" },
 	{ "Hewlett-Packard", "Scanjet 4070 Photosmart"  },
-	{ "Hewlett-Packard", "Scanjet 4370" }
+	{ "Hewlett-Packard", "Scanjet 4370" },
+	{ "UMAX", "Astra 4900/4950" }
 };
 
 
@@ -235,8 +239,8 @@ int scanbtnd_get_button(scanner_t* scanner)
 		return 0;
 	}
 
-	/* If none button is pressed, register 0xe968 contains 0x63.
-	   RTS8822 seems to support 7 buttons and more than one button can be pressed
+	/* If none button is pressed, register 0xe968 contains 0x3F.
+	   RTS8822 seems to support 6 buttons and more than one button can be pressed
 	   at the same time. One button is pressed when its bit is 0 in that register.
    */
 
