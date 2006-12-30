@@ -260,7 +260,7 @@ int scanbtnd_get_button(scanner_t* scanner)
 	Mail: $66 ==> 0x04
 	*/
 
-	unsigned char bytes[255];
+	unsigned char bytes[4];
 	int num_bytes;
 	int button = 0;
 	
@@ -274,11 +274,15 @@ int scanbtnd_get_button(scanner_t* scanner)
 
 	num_bytes = plustek_write(scanner, (void*)bytes, 4);
 	if (num_bytes != 4) {
+		syslog(LOG_WARN, "plustek-backend: communication error: "
+			"write length:%d (expected:%d)", num_bytes, 4);
 		plustek_flush(scanner);
 		return 0;
 	}
 	num_bytes = plustek_read(scanner, (void*)bytes, 1);
 	if (num_bytes != 1) {
+		syslog(LOG_WARN, "plustek-backend: communication error: "
+			"read length:%d (expected:%d)", num_bytes, 1);
 		plustek_flush(scanner);
 		return 0;
 	}

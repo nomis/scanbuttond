@@ -235,14 +235,15 @@ int scanbtnd_get_button(scanner_t* scanner)
 	num_bytes = hp3900_read(scanner, bytes);
 
 	if (num_bytes != 2) {
+		syslog(LOG_WARN, "hp3900-backend: communication error: "
+			"read length:%d (expected:%d)", num_bytes, 2);
 		hp3900_flush(scanner);
 		return 0;
 	}
 
 	/* If none button is pressed, register 0xe968 contains 0x3F.
 	   RTS8822 seems to support 6 buttons and more than one button can be pressed
-	   at the same time. One button is pressed when its bit is 0 in that register.
-   */
+	   at the same time. One button is pressed when its bit is 0 in that register. */
 
 	mask = 1;
 	for (c = 0; c < scanner->num_buttons; c++) {

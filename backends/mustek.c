@@ -225,7 +225,7 @@ void mustek_flush(scanner_t* scanner)
  
 int scanbtnd_get_button(scanner_t* scanner)
 {
-	unsigned char bytes[255];
+	unsigned char bytes[8];
 	int num_bytes;
 
 	bytes[0] = 0x74; // check function key
@@ -235,11 +235,15 @@ int scanbtnd_get_button(scanner_t* scanner)
 
 	num_bytes = mustek_write(scanner, (void*)bytes, 1);
 	if (num_bytes != 1) {
+		syslog(LOG_WARN, "mustek-backend: communication error: "
+			"write length:%d (expected:%d)", num_bytes, 1);
 		mustek_flush(scanner);
 		return 0;
 	}
-	num_bytes = mustek_read(scanner, (void*)bytes, 4);
-	if (num_bytes != 4) {
+	num_bytes = mustek_read(scanner, (void*)bytes, 8);
+	if (num_bytes != 8) {
+		syslog(LOG_WARN, "mustek-backend: communication error: "
+			"read length:%d (expected:%d)", num_bytes, 8);
 		mustek_flush(scanner);
 		return 0;
 	}

@@ -258,7 +258,8 @@ void epson_flush(scanner_t* scanner)
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
-	unsigned char bytes[255];
+	#define BUFFER_SIZE 16
+	unsigned char bytes[BUFFER_SIZE];
 	int rcv_len;
 	int num_bytes;
 
@@ -271,17 +272,23 @@ int scanbtnd_get_button(scanner_t* scanner)
 
 	num_bytes = epson_write(scanner, (void*)bytes, 2);
 	if (num_bytes != 2) {
+		syslog(LOG_WARN, "epson-backend: communication error: "
+			"write length:%d (expected:%d)", num_bytes, 2);
 		epson_flush(scanner); 
 		return 0;
 	}
 	num_bytes = epson_read(scanner, (void*)bytes, 4);
 	if (num_bytes != 4) {
+		syslog(LOG_WARN, "epson-backend: communication error: "
+			"read length:%d (expected:%d)", num_bytes, 4);
 		epson_flush(scanner);
 		return 0;
 	}
 	rcv_len = bytes[3] << 8 | bytes[2];
-	num_bytes = epson_read(scanner, (void*)bytes, rcv_len);
+	num_bytes = epson_read(scanner, (void*)bytes, MAX(rcv_len, BUFFER_SIZE));
 	if (num_bytes != rcv_len) {
+		syslog(LOG_WARN, "epson-backend: communication error: "
+			"read length:%d (expected:%d)", num_bytes, MAX(rcv_len, BUFFER_SIZE));
 		epson_flush(scanner);
 		return 0;
 	}

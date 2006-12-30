@@ -201,7 +201,7 @@ int scanbtnd_close(scanner_t* scanner)
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
-   unsigned char bytes[255];
+   unsigned char bytes[2];
    int num_bytes;
    int button = 0;
 
@@ -217,12 +217,13 @@ int scanbtnd_get_button(scanner_t* scanner)
    // some specific data to the scanner first
    // 40 0c 83 00 00 00 01 00  -> 0x6d
    bytes[0] = 0x6d;
-   bytes[1] = 0x00; // not realy needed, but just to be sure ;-)
+   bytes[1] = 0x00; // not really needed, but just to be sure ;-)
    num_bytes = libusb_control_msg((libusb_device_t*)scanner->internal_dev_ptr,
 				  0x40, 0x0c, 0x0083, 0x0000, (void *)bytes, 0x0001);
    
    if (num_bytes != 1) {
-      syslog(LOG_INFO, "genesys-backend: could not write to scanner");
+      syslog(LOG_WARN, "genesys-backend: communication error: "
+			"read length:%d (expected:%d)", num_bytes, 1);
       return 0;
    }
 
@@ -238,7 +239,8 @@ int scanbtnd_get_button(scanner_t* scanner)
    num_bytes = libusb_control_msg((libusb_device_t*)scanner->internal_dev_ptr,
 				  0xc0, 0x0c, 0x0084, 0x0000, (void *)bytes, 0x0001);
    if (num_bytes != 1) {
-      syslog(LOG_INFO, "genesys-backend: could not read status register");
+      syslog(LOG_WARN, "genesys-backend: communication error: "
+         "could not read status register");
       return 0;
    }
 

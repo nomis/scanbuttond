@@ -231,7 +231,7 @@ void snapscan_flush(scanner_t* scanner)
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
-	unsigned char bytes[255];
+	unsigned char bytes[20];
 	int num_bytes;
 	int button = 0;
 
@@ -247,18 +247,28 @@ int scanbtnd_get_button(scanner_t* scanner)
 
 	num_bytes = snapscan_write(scanner, (void*)bytes, 6);
 	if (num_bytes != 6) {
+		syslog(LOG_WARN, "snapscan-backend: communication error: "
+			"write length:%d (expected:%d)", num_bytes, 6);
 		snapscan_flush(scanner);
 		return 0;
 	}
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 8);
 	if (num_bytes != 8 || bytes[0] != 0xF9) {
+		syslog(LOG_WARN, "snapscan-backend: communication error: "
+			"read length:%d (expected:%d), "
+			"byte[0]:%x (expected:%x)", 
+			num_bytes, 8, bytes[0], 0xF9);
 		snapscan_flush(scanner);
 		return 0;
 	}
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 20);
 	if (num_bytes != 20 || bytes[0] != 0xF0) {
+		syslog(LOG_WARN, "snapscan-backend: communication error: "
+			"read length:%d (expected:%d), "
+			"byte[0]:%x (expected:%x)", 
+			num_bytes, 20, bytes[0], 0xF0);
 		snapscan_flush(scanner); 
 		return 0;
 	}
@@ -274,6 +284,10 @@ int scanbtnd_get_button(scanner_t* scanner)
 
 	num_bytes = snapscan_read(scanner, (void*)bytes, 8);
 	if (num_bytes != 8 || bytes[0] != 0xFB) {
+		syslog(LOG_WARN, "snapscan-backend: communication error: "
+			"read length:%d (expected:%d), "
+			"byte[0]:%x (expected:%x)", 
+			num_bytes, 8, bytes[0], 0xFB);
 		snapscan_flush(scanner);
 		return 0;
 	}
