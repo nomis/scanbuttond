@@ -1,7 +1,7 @@
 // plustek.c: Plustek device backend
 // This file is part of scanbuttond.
 // Copyleft )c( 2005 by Hans Verkuil
-// Copyleft )c( 2005-2006 by Bernhard Stiftner
+// Copyleft )c( 2005-2007 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@
 
 static char* backend_name = "Plustek USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 8
+#define NUM_SUPPORTED_USB_DEVICES 9
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
@@ -40,7 +40,8 @@ static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	{ 0x04a9, 0x2220, 3 },  // CanoScan LiDE 25
 	{ 0x04a9, 0x220e, 3 },	// CanoScan LiDE 30
 	{ 0x04b8, 0x011d, 4 },  // Epson Perfection 1260
-	{ 0x03f0, 0x0605, 2 }   // HP ScanJet 2200c (maybe only 1 button?)
+	{ 0x03f0, 0x0605, 2 },  // HP ScanJet 2200c (maybe only 1 button?)
+	{ 0x0458, 0x2007, 5 }   // Genius (KYE) ColorPage-HR6 V2 (5 buttons)
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
@@ -51,7 +52,8 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Canon", "CanoScan LiDE 25" },
 	{ "Canon", "CanoScan LiDE 30" },
 	{ "Epson", "Perfection 1260" },
-	{ "Hewlett-Packard", "ScanJet 2200c" }
+	{ "Hewlett-Packard", "ScanJet 2200c" },
+	{ "Genius (KYE)", "ColorPage-HR6 V2" }
 };
 
 
@@ -310,6 +312,15 @@ int scanbtnd_get_button(scanner_t* scanner)
 		if ((bytes[0] & 0x10) != 0) button = 2;
 		if ((bytes[0] & 0x20) != 0) button = 3;
 		if ((bytes[0] & 0x40) != 0) button = 4;
+		break;
+	}
+	case 5: // only tested for the Genius ColorPage-HR6 V2...
+		// seems to be really different compared to the other cases...
+		if ((bytes[0] & 0x04) == 0x04) button = 1;
+		if ((bytes[0] & 0x08) == 0x08) button = 2;
+		if ((bytes[0] & 0x10) == 0x10) button = 3;
+		if ((bytes[0] & 0x0c) == 0x0c) button = 4;
+		if ((bytes[0] & 0x18) == 0x18) button = 5;
 		break;
 	}
 	return button;
