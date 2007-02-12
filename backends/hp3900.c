@@ -235,7 +235,7 @@ int scanbtnd_get_button(scanner_t* scanner)
 	num_bytes = hp3900_read(scanner, bytes);
 
 	if (num_bytes != 2) {
-		syslog(LOG_WARN, "hp3900-backend: communication error: "
+		syslog(LOG_WARNING, "hp3900-backend: communication error: "
 			"read length:%d (expected:%d)", num_bytes, 2);
 		hp3900_flush(scanner);
 		return 0;

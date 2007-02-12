@@ -29,14 +29,15 @@
 
 static char* backend_name = "Niash USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 4
+#define NUM_SUPPORTED_USB_DEVICES 5
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
 	{ 0x06bd, 0x0100, 4 },	// Agfa Snapscan Touch
 	{ 0x03f0, 0x0205, 2 },	// HP Scanjet 3300c
 	{ 0x03f0, 0x0405, 3 },	// HP Scanjet 3400c
-	{ 0x03f0, 0x0305, 3 }	// HP Scanjet 4300c
+	{ 0x03f0, 0x0305, 3 },	// HP Scanjet 4300c
+	{ 0x047b, 0x1002, 3 }, // HP Scanjet 4300c
 };
 
 // TODO: check if this backend really works on the Epson 2580 too...
@@ -44,6 +45,7 @@ static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Agfa", "Snapscan Touch" },
 	{ "Hewlett-Packard", "Scanjet 3300c" },
 	{ "Hewlett-Packard", "Scanjet 3400c" },
+	{ "Hewlett-Packard", "Scanjet 4300c" },
 	{ "Hewlett-Packard", "Scanjet 4300c" }
 };
 

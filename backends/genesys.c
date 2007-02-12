@@ -222,7 +222,7 @@ int scanbtnd_get_button(scanner_t* scanner)
 				  0x40, 0x0c, 0x0083, 0x0000, (void *)bytes, 0x0001);
    
    if (num_bytes != 1) {
-      syslog(LOG_WARN, "genesys-backend: communication error: "
+      syslog(LOG_WARNING, "genesys-backend: communication error: "
 			"read length:%d (expected:%d)", num_bytes, 1);
       return 0;
    }
@@ -239,7 +239,7 @@ int scanbtnd_get_button(scanner_t* scanner)
    num_bytes = libusb_control_msg((libusb_device_t*)scanner->internal_dev_ptr,
 				  0xc0, 0x0c, 0x0084, 0x0000, (void *)bytes, 0x0001);
    if (num_bytes != 1) {
-      syslog(LOG_WARN, "genesys-backend: communication error: "
+      syslog(LOG_WARNING, "genesys-backend: communication error: "
          "could not read status register");
       return 0;
    }

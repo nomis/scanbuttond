@@ -276,14 +276,14 @@ int scanbtnd_get_button(scanner_t* scanner)
 
 	num_bytes = plustek_write(scanner, (void*)bytes, 4);
 	if (num_bytes != 4) {
-		syslog(LOG_WARN, "plustek-backend: communication error: "
+		syslog(LOG_WARNING, "plustek-backend: communication error: "
 			"write length:%d (expected:%d)", num_bytes, 4);
 		plustek_flush(scanner);
 		return 0;
 	}
 	num_bytes = plustek_read(scanner, (void*)bytes, 1);
 	if (num_bytes != 1) {
-		syslog(LOG_WARN, "plustek-backend: communication error: "
+		syslog(LOG_WARNING, "plustek-backend: communication error: "
 			"read length:%d (expected:%d)", num_bytes, 1);
 		plustek_flush(scanner);
 		return 0;
@@ -313,7 +313,6 @@ int scanbtnd_get_button(scanner_t* scanner)
 		if ((bytes[0] & 0x20) != 0) button = 3;
 		if ((bytes[0] & 0x40) != 0) button = 4;
 		break;
-	}
 	case 5: // only tested for the Genius ColorPage-HR6 V2...
 		// seems to be really different compared to the other cases...
 		if ((bytes[0] & 0x04) == 0x04) button = 1;
