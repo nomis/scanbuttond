@@ -157,8 +157,8 @@ void scanbtnd_unload_backend(backend_t* backend)
 {
 	if (backend->handle != NULL) {
 		dlclose(backend->handle);
-		free(backend);
 		backend->handle = NULL;
+		free(backend);
 	}
 }
 
