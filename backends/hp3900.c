@@ -28,7 +28,7 @@
 
 static char* backend_name = "HP3900 USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 5
+#define NUM_SUPPORTED_USB_DEVICES 6
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
@@ -36,14 +36,16 @@ static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	{ 0x03f0, 0x2305, 4 },	// HP Scanjet 3970
 	{ 0x03f0, 0x2405, 4 },	// HP Scanjet 4070
 	{ 0x03f0, 0x4105, 4 },	// HP Scanjet 4370
+	{ 0x03f0, 0x4205, 4 },	// HP Scanjet G3010
 	{ 0x06dc, 0x0020, 4 }	// Umax Astra 4900/4950
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Hewlett-Packard", "ScanJet 3800" },
 	{ "Hewlett-Packard", "ScanJet 3970" },
-	{ "Hewlett-Packard", "Scanjet 4070 Photosmart"  },
+	{ "Hewlett-Packard", "Scanjet 4070 Photosmart" },
 	{ "Hewlett-Packard", "Scanjet 4370" },
+	{ "Hewlett-Packard", "Scanjet G3010" },
 	{ "UMAX", "Astra 4900/4950" }
 };
 
