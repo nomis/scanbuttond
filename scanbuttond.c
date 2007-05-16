@@ -1,6 +1,6 @@
 // scanbuttond.c: the actual daemon ("frontend")
 // This file is part of scanbuttond.
-// Copyleft )c( 2004-2006 by Bernhard Stiftner
+// Copyleft )c( 2004-2007 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -137,7 +137,7 @@ void show_usage(void)
 	printf("                              default: %s\n", DEF_BUTTONPRESSED_SCRIPT);
 	printf("  -S, --initscript=SCRIPT     The name of the script to be run to initialize the scanners\n");
 	printf("                              default: %s\n", DEF_INITSCANNER_SCRIPT);
-	printf("  -p, --pollingdelay=DELAY    The polling delay (ms), default: %ld\n", DEF_POLL_DELAY);
+	printf("  -p, --pollingdelay=DELAY    The polling interval in microseconds, default: %ld\n", DEF_POLL_DELAY);
 	printf("  -r, --retrydelay=DELAY      The retry delay (ms), default: %ld\n", DEF_RETRY_DELAY);
 	printf("  -h, --help                  Shows this screen\n");
 	printf("  -v, --version               Shows the version\n");
