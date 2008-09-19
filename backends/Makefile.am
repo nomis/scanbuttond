@@ -1,14 +1,16 @@
-lib_LTLIBRARIES = 	libscanbtnd-backend_epson.la \
+lib_LTLIBRARIES = 	libscanbtnd-backend_artec_eplus48u.la \
+			libscanbtnd-backend_epson.la \
+			libscanbtnd-backend_genesys.la \
 			libscanbtnd-backend_meta.la \
 			libscanbtnd-backend_mustek.la \
 			libscanbtnd-backend_niash.la \
 			libscanbtnd-backend_plustek.la \
 			libscanbtnd-backend_plustek_umax.la \
 			libscanbtnd-backend_snapscan.la \
-			libscanbtnd-backend_artec_eplus48u.la \
-			libscanbtnd-backend_hp3900.la \
 			libscanbtnd-backend_hp3500.la \
-			libscanbtnd-backend_genesys.la
+			libscanbtnd-backend_hp3900.la \
+			libscanbtnd-backend_hp5590.la
+			
 
 libscanbtnd_backend_epson_la_SOURCES = epson.c epson.h
 libscanbtnd_backend_epson_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
@@ -40,6 +42,9 @@ libscanbtnd_backend_hp3900_la_LDFLAGS = -module -version-info 1:0:0
 libscanbtnd_backend_hp3500_la_SOURCES = hp3500.c hp3500.h
 libscanbtnd_backend_hp3500_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
 libscanbtnd_backend_hp3500_la_LDFLAGS = -module -version-info 1:0:0
+libscanbtnd_backend_hp5590_la_SOURCES = hp5590.c hp5590.h
+libscanbtnd_backend_hp5590_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
+libscanbtnd_backend_hp5590_la_LDFLAGS = -module -version-info 1:0:0
 libscanbtnd_backend_genesys_la_SOURCES = genesys.c genesys.h
 libscanbtnd_backend_genesys_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
 libscanbtnd_backend_genesys_la_LDFLAGS = -module -version-info 1:0:0
