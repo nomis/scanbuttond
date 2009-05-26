@@ -105,6 +105,7 @@ Supported by the hp3900 backend (via libusb):
 * HP ScanJet 4370 (working, tested)
 * HP ScanJet G2710 (working, tested)
 * HP ScanJet G3010 (working, tested)
+* HP ScanJet G3110 (working, tested)
 * Umax Astra 4900/4950 (expected to work)
 
 Supported by the hp5590 backend (via libusb):
@@ -144,11 +145,14 @@ Supported by the snapscan backend (via libusb):
 * Epson Perfection 3590 (working, tested)
 * Epson Perfection 1270 (working, tested)
 
-Note: the mustek, niash, plustek, plustek_umax and snapscan backends were
-implemented using information gathered by "sniffing" the communication between
-the Windows driver and the scanner, because there is no technical documentation
-available for these devices! This means that there may be some weird issues
-(e.g. button press events reported twice).
+Supported by the gt68xx backend (via libusb):
+* Genius Colorpage Vivid4 (working, experimental)
+
+Note: the mustek, niash, plustek, plustek_umax, gt68xx and snapscan backends
+were implemented using information gathered by "sniffing" the communication
+between the Windows driver and the scanner, because there is no technical
+documentation available for these devices! This means that there may be some
+weird issues (e.g. button press events reported twice).
 
 
 How to link actions to buttons

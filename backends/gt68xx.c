@@ -1,6 +1,7 @@
-// hp3900.c: RTS8822 & RTS8823 chipset based devices backend
+// gt68xx.c: gt68xx device backend
 // This file is part of scanbuttond.
-// Copyleft )c( 2007 by Jonathan Bravo Lopez
+// Copyleft )c( 2005 by Hans Verkuil
+// Copyleft )c( 2005-2006 by Bernhard Stiftner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -16,6 +17,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+// essentialy most of these files are just copies of each other apart of the
+// device name. the only real changes are in the parsing routines.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,45 +27,29 @@
 #include <syslog.h>
 #include "scanbuttond/scanbuttond.h"
 #include "scanbuttond/libusbi.h"
-#include "hp3900.h"
+#include "gt68xx.h"
 
-static char* backend_name = "HP3900 USB";
+static char* backend_name = "gt68xx USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 9
+#define NUM_SUPPORTED_USB_DEVICES 1
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
-	{ 0x03f0, 0x2605, 3 },  // HP Scanjet 3800
-	{ 0x03f0, 0x2305, 4 },	// HP Scanjet 3970
-	{ 0x03f0, 0x2405, 4 },	// HP Scanjet 4070
-	{ 0x03f0, 0x4105, 4 },	// HP Scanjet 4370
-	{ 0x03f0, 0x2805, 3 },  // HP Scanjet G2710
-	{ 0x03f0, 0x4205, 4 },	// HP Scanjet G3010
-	{ 0x03f0, 0x4305, 4 },	// HP Scanjet G3110
-	{ 0x06dc, 0x0020, 4 },	// Umax Astra 4900/4950
-	{ 0x04a5, 0x2211, 3 }	// BenQ 5550T
+	{ 0x0458, 0x2014, 5 }
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
-	{ "Hewlett-Packard", "ScanJet 3800" },
-	{ "Hewlett-Packard", "ScanJet 3970" },
-	{ "Hewlett-Packard", "Scanjet 4070 Photosmart" },
-	{ "Hewlett-Packard", "Scanjet 4370" },
-	{ "Hewlett-Packard", "ScanJet G2710" },
-	{ "Hewlett-Packard", "Scanjet G3010" },
-        { "Hewlett-Packard", "Scanjet G3110" },
-	{ "UMAX", "Astra 4900/4950" },
-	{ "BenQ", "5550T" }
+	{ "Genius", "Colorpage Vivid4" }
 };
 
 
 libusb_handle_t* libusb_handle;
-scanner_t* hp3900_scanners = NULL;
+scanner_t* gt68xx_scanners = NULL;
 
 
 // returns -1 if the scanner is unsupported, or the index of the
 // corresponding vendor-product pair in the supported_usb_devices array.
-int hp3900_match_libusb_scanner(libusb_device_t* device)
+int gt68xx_match_libusb_scanner(libusb_device_t* device)
 {
 	int index;
 	for (index = 0; index < NUM_SUPPORTED_USB_DEVICES; index++) {
@@ -76,10 +63,10 @@ int hp3900_match_libusb_scanner(libusb_device_t* device)
 }
 
 
-void hp3900_attach_libusb_scanner(libusb_device_t* device)
+void gt68xx_attach_libusb_scanner(libusb_device_t* device)
 {
-	const char* descriptor_prefix = "hp3900:libusb:";
-	int index = hp3900_match_libusb_scanner(device);
+	const char* descriptor_prefix = "gt68xx:libusb:";
+	int index = gt68xx_match_libusb_scanner(device);
 	if (index < 0) return; // unsupported
 	scanner_t* scanner = (scanner_t*)malloc(sizeof(scanner_t));
 	scanner->vendor = usb_device_descriptions[index][0];
@@ -93,43 +80,43 @@ void hp3900_attach_libusb_scanner(libusb_device_t* device)
 	strcat(scanner->sane_device, device->location);
 	scanner->num_buttons = supported_usb_devices[index][2];
 	scanner->is_open = 0;
-	scanner->next = hp3900_scanners;
-	hp3900_scanners = scanner;
+	scanner->next = gt68xx_scanners;
+	gt68xx_scanners = scanner;
 }
 
 
-void hp3900_detach_scanners(void)
+void gt68xx_detach_scanners(void)
 {
 	scanner_t* next;
-	while (hp3900_scanners != NULL) {
-		next = hp3900_scanners->next;
-		free(hp3900_scanners->sane_device);
-		free(hp3900_scanners);
-		hp3900_scanners = next;
+	while (gt68xx_scanners != NULL) {
+		next = gt68xx_scanners->next;
+		free(gt68xx_scanners->sane_device);
+		free(gt68xx_scanners);
+		gt68xx_scanners = next;
 	}
 }
 
 
-void hp3900_scan_devices(libusb_device_t* devices)
+void gt68xx_scan_devices(libusb_device_t* devices)
 {
 	int index;
 	libusb_device_t* device = devices;
 	while (device != NULL) {
-		index = hp3900_match_libusb_scanner(device);
+		index = gt68xx_match_libusb_scanner(device);
 		if (index >= 0) 
-			hp3900_attach_libusb_scanner(device);
+			gt68xx_attach_libusb_scanner(device);
 		device = device->next;
 	}
 }
 
 
-int hp3900_init_libusb(void)
+int gt68xx_init_libusb(void)
 {
 	libusb_device_t* devices;
 
 	libusb_handle = libusb_init();
 	devices = libusb_get_devices(libusb_handle);
-	hp3900_scan_devices(devices);
+	gt68xx_scan_devices(devices);
 	return 0;
 }
 
@@ -142,10 +129,10 @@ const char* scanbtnd_get_backend_name(void)
 
 int scanbtnd_init(void)
 {
-	hp3900_scanners = NULL;
+	gt68xx_scanners = NULL;
 
-	syslog(LOG_INFO, "hp3900-backend: init");
-	return hp3900_init_libusb();
+	syslog(LOG_INFO, "gt68xx-backend: init");
+	return gt68xx_init_libusb();
 }
 
 
@@ -153,18 +140,18 @@ int scanbtnd_rescan(void)
 {
 	libusb_device_t* devices;
 
-	hp3900_detach_scanners();
-	hp3900_scanners = NULL;
+	gt68xx_detach_scanners();
+	gt68xx_scanners = NULL;
 	libusb_rescan(libusb_handle);
 	devices = libusb_get_devices(libusb_handle);
-	hp3900_scan_devices(devices);
+	gt68xx_scan_devices(devices);
 	return 0;
 }
 
 
 const scanner_t* scanbtnd_get_supported_devices(void)
 {
-	return hp3900_scanners;
+	return gt68xx_scanners;
 }
 
 
@@ -204,19 +191,30 @@ int scanbtnd_close(scanner_t* scanner)
 }
 
 
-int hp3900_read(scanner_t* scanner, void* buffer)
+int gt68xx_read(scanner_t* scanner, void* buffer, int bytecount)
 {
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
 			return libusb_control_msg((libusb_device_t*)scanner->internal_dev_ptr,
-	                        0xc0, 0x04, 0xe968, 0x0100, (void *)buffer, 0x0002);
+				0xc0, 0x04, 0x2011, 0x3f00, buffer, bytecount);
 			break;
 	}
 	return -1;
 }
 
 
-void hp3900_flush(scanner_t* scanner)
+int gt68xx_write(scanner_t* scanner, void* buffer, int bytecount)
+{
+	switch (scanner->connection) {
+		case CONNECTION_LIBUSB:
+			return libusb_control_msg((libusb_device_t*)scanner->internal_dev_ptr,
+			    0x40, 0x04, 0x2010, 0x3f40, buffer, bytecount);
+			break;
+	}
+	return -1;
+}
+
+void gt68xx_flush(scanner_t* scanner)
 {
 	switch (scanner->connection) {
 		case CONNECTION_LIBUSB:
@@ -228,40 +226,37 @@ void hp3900_flush(scanner_t* scanner)
 
 int scanbtnd_get_button(scanner_t* scanner)
 {
-	unsigned char bytes[2];
+	unsigned char bytes[255] = {};
 	int num_bytes;
 	int button = 0;
-	int c;
-	int mask;
 	
-	bytes[2] = 0;
+	bytes[0] = 0x29;
+	bytes[1] = 0x01;
+	bytes[2] = 0xa8;
+	bytes[3] = 0x61;
+	bytes[0x38] = 0x2e;
 	
 	if (!scanner->is_open)
 		return -EINVAL;
 
-	/* Lets read RTS8822 register 0xe968 */
-	num_bytes = hp3900_read(scanner, bytes);
+	if (gt68xx_write(scanner, (void*)bytes, 0x40) < 0)
+	    return 0;
+	if ((num_bytes = gt68xx_read(scanner, (void*)bytes, 0x40)) < 0)
+	    return 0;
+	
+	if (bytes[0] != 0x00 || bytes[1] != 0x29)
+	    return 0;
 
-	if (num_bytes != 2) {
-		syslog(LOG_WARNING, "hp3900-backend: communication error: "
-			"read length:%d (expected:%d)", num_bytes, 2);
-		hp3900_flush(scanner);
-		return 0;
-	}
-
-	/* If none button is pressed, register 0xe968 contains 0x3F.
-	   RTS8822 seems to support 6 buttons and more than one button can be pressed
-	   at the same time. One button is pressed when its bit is 0 in that register. */
-
-	mask = 1;
-	for (c = 0; c < scanner->num_buttons; c++) {
-		if ((bytes[0] & mask) == 0) {
-			button = c + 1;
-			break;
-		}
-		mask = mask << 1;
-	}
-
+	if (bytes[2] & 0x02)
+	    button = 1; // scan
+	if (bytes[2] & 0x01)
+	    button = 2; // copy
+	if (bytes[2] & 0x04)
+	    button = 3; // ocr
+	if (bytes[2] & 0x08)
+	    button = 4; // mail
+	if (bytes[2] & 0x10)
+	    button = 5; // fax
 	return button;
 }
 
@@ -274,8 +269,8 @@ const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
 
 int scanbtnd_exit(void)
 {
-	syslog(LOG_INFO, "hp3900-backend: exit");
-	hp3900_detach_scanners();
+	syslog(LOG_INFO, "gt68xx-backend: exit");
+	gt68xx_detach_scanners();
 	libusb_exit(libusb_handle);
 	return 0;
 }

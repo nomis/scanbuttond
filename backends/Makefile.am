@@ -9,7 +9,8 @@ lib_LTLIBRARIES = 	libscanbtnd-backend_artec_eplus48u.la \
 			libscanbtnd-backend_snapscan.la \
 			libscanbtnd-backend_hp3500.la \
 			libscanbtnd-backend_hp3900.la \
-			libscanbtnd-backend_hp5590.la
+			libscanbtnd-backend_hp5590.la \
+			libscanbtnd-backend_gt68xx.la
 			
 
 libscanbtnd_backend_epson_la_SOURCES = epson.c epson.h
@@ -48,6 +49,9 @@ libscanbtnd_backend_hp5590_la_LDFLAGS = -module -version-info 1:0:0
 libscanbtnd_backend_genesys_la_SOURCES = genesys.c genesys.h
 libscanbtnd_backend_genesys_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
 libscanbtnd_backend_genesys_la_LDFLAGS = -module -version-info 1:0:0
+libscanbtnd_backend_gt68xx_la_SOURCES = gt68xx.c gt68xx.h
+libscanbtnd_backend_gt68xx_la_LIBADD = ../interface/libscanbtnd-interface_usb.la
+libscanbtnd_backend_gt68xx_la_LDFLAGS = -module -version-info 1:0:0
 
 pkgsysconfdir = $(sysconfdir)/$(PACKAGE)
 pkgsysconf_DATA = meta.conf
