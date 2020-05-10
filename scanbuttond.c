@@ -338,21 +338,30 @@ int main(int argc, char** argv)
 				break;
 			}
 
-			button = backend->scanbtnd_get_button(scanner);
-			backend->scanbtnd_close(scanner);
+			while (killed == 0) {
+				button = backend->scanbtnd_get_button(scanner);
 
-			if ((button > 0) && (button != scanner->lastbutton)) {
-				syslog(LOG_INFO, "button %d has been pressed.", button);
-				scanner->lastbutton = button;
-				char cmd[BUF_SIZE];
-				snprintf(cmd, BUF_SIZE, "%s %d %s", buttonpressed_script, button,
-						 backend->scanbtnd_get_sane_device_descriptor(scanner));
-				execute_and_wait(cmd);
+				if ((button > 0) && (button != scanner->lastbutton)) {
+					syslog(LOG_INFO, "button %d has been pressed.", button);
+					scanner->lastbutton = button;
+					char cmd[BUF_SIZE];
+					snprintf(cmd, BUF_SIZE, "%s %d %s", buttonpressed_script, button,
+							backend->scanbtnd_get_sane_device_descriptor(scanner));
+					backend->scanbtnd_close(scanner);
+					execute_and_wait(cmd);
+					button = 0;
+					result = backend->scanbtnd_open(scanner);
+					if (result != 0)
+						break;
+				}
+				if ((button == 0) && (scanner->lastbutton > 0)) {
+					syslog(LOG_INFO, "button %d has been released.", scanner->lastbutton);
+					scanner->lastbutton = button;
+				}
 			}
-			if ((button == 0) && (scanner->lastbutton > 0)) {
-				syslog(LOG_INFO, "button %d has been released.", scanner->lastbutton);
-				scanner->lastbutton = button;
-			}
+
+			if (result == 0)
+				backend->scanbtnd_close(scanner);
 			scanner = scanner->next;
 		}
 
