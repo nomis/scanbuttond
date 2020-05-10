@@ -1,6 +1,7 @@
 // scanbuttond.h: fundamental data types, constants, ...
 // This file is part of scanbuttond.
 // Copyleft )c( 2004-2005 by Bernhard Stiftner
+// Copyright 2020 Simon Arlott
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -46,7 +47,8 @@ struct scanner {
 	int lastbutton;
 	int is_open;
 	int num_buttons;
-	
+	void* backend_config;
+
 	scanner_t* next;
 };
 

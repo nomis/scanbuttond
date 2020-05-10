@@ -1,6 +1,7 @@
 // meta.c: meta backend ("dynamic backend loader")
 // This file is part of scanbuttond.
 // Copyleft )c( 2005-2006 by Bernhard Stiftner
+// Copyright 2020 Simon Arlott
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -56,6 +57,7 @@ void meta_attach_scanner(scanner_t* scanner, backend_t* backend)
 	dev->meta_info = (void*)backend;
 	dev->lastbutton = scanner->lastbutton;
 	dev->num_buttons = scanner->num_buttons;
+	dev->backend_config = scanner->backend_config;
 	dev->is_open = scanner->is_open;
 	dev->next = meta_scanners;
 	meta_scanners = dev;

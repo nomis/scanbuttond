@@ -2,6 +2,7 @@
 // This file is part of scanbuttond.
 // Copyleft )c( 2005 by Hans Verkuil
 // Copyleft )c( 2005-2006 by Bernhard Stiftner
+// Copyright 2020 Simon Arlott
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -29,32 +30,62 @@
 
 static char* backend_name = "Genesys USB";
 
-#define NUM_SUPPORTED_USB_DEVICES 2
+#define NUM_SUPPORTED_USB_DEVICES 3
 
 static int supported_usb_devices[NUM_SUPPORTED_USB_DEVICES][3] = {
 	// vendor, product, num_buttons
-	{ 0x04a9, 0x221c, 15 },	// CanoScan LiDE 60 (15 includes combined buttons - only 4 real buttons)
-	{ 0x04a9, 0x2213, 15 }	// CanoScan LiDE 35 (15 includes combined buttons - only 4 real buttons)
+	{ 0x04a9, 0x221c, 4 }, // CanoScan LiDE 60
+	{ 0x04a9, 0x2213, 4 }, // CanoScan LiDE 35
+	{ 0x04a9, 0x190f, 5 }  // CanoScan LiDE 220
 };
 
 static char* usb_device_descriptions[NUM_SUPPORTED_USB_DEVICES][2] = {
 	{ "Canon", "CanoScan LiDE 60" },
-	{ "Canon", "CanoScan LiDE 35" }
+	{ "Canon", "CanoScan LiDE 35" },
+	{ "Canon", "CanoScan LiDE 220" }
 };
 
 static libusb_handle_t* libusb_handle;
 static scanner_t* genesys_scanners = NULL;
 
 // Button Map for CanonScan LiDE 60
-// button 1 = 0x08 copy  
+// button 1 = 0x08 copy
 // button 2 = 0x01 scan
-// button 3 = 0x02 pdf 
+// button 3 = 0x02 pdf
 // button 4 = 0x04 mail
-// all others are combinations of the above (if pressed together)
-static char button_map_lide60[256] = {  0,  2,  3,  5,
-				        4,  6,  7,  8,
-				        1,  9, 10, 11,
-				       12, 13, 14, 15};
+static int button_map_lide60[256] = {  0,  2,  3,  0,
+				       4,  0,  0,  0,
+				       1,  0,  0,  0,
+				       0,  0,  0,  0};
+
+// Button Map for CanoScan LiDE 220
+// button 1 = 0x10 pdf1
+// button 2 = 0x01 pdf2
+// button 3 = 0x02 auto
+// button 4 = 0x04 copy
+// button 5 = 0x08 send
+static int button_map_lide220[256] = {
+				       0,  2,  3,  0,
+				       4,  0,  0,  0,
+				       5,  0,  0,  0,
+				       0,  0,  0,  0,
+				       1,  0,  0,  0,
+				       0,  0,  0,  0,
+				       0,  0,  0,  0,
+				       0,  0,  0,  0,
+				     };
+
+struct genesys_config {
+	int reg;
+	int mask;
+	int* button_map;
+};
+
+static struct genesys_config usb_device_config[NUM_SUPPORTED_USB_DEVICES] = {
+	{ 0x6d, 0x0f, button_map_lide60 },
+	{ 0x6d,	0x0f, button_map_lide60 },
+	{ 0x31,	0x1f, button_map_lide220 }
+};
 
 // returns -1 if the scanner is unsupported, or the index of the
 // corresponding vendor-product pair in the supported_usb_devices array.
@@ -88,6 +119,7 @@ void genesys_attach_libusb_scanner(libusb_device_t* device)
    strcpy(scanner->sane_device, descriptor_prefix);
    strcat(scanner->sane_device, device->location);
    scanner->num_buttons = supported_usb_devices[index][2];
+   scanner->backend_config = &usb_device_config[index];
    scanner->is_open = 0;
    scanner->next = genesys_scanners;
    genesys_scanners = scanner;
@@ -112,7 +144,7 @@ void genesys_scan_devices(libusb_device_t* devices)
    libusb_device_t* device = devices;
    while (device != NULL) {
       index = genesys_match_libusb_scanner(device);
-      if (index >= 0) 
+      if (index >= 0)
 	 genesys_attach_libusb_scanner(device);
       device = device->next;
    }
@@ -204,11 +236,7 @@ int scanbtnd_get_button(scanner_t* scanner)
    unsigned char bytes[2];
    int num_bytes;
    int button = 0;
-
-   // current_button_map should be select according to the current scanner
-   // there is no space left inside scanner_t to store some additional data (for example a pointer)
-   // currently we only support one type of scanner and so this one can be hardcoded
-   char *current_button_map = button_map_lide60;
+   struct genesys_config *config = scanner->backend_config;
    
    if (!scanner->is_open)
       return -EINVAL;
@@ -216,7 +244,7 @@ int scanbtnd_get_button(scanner_t* scanner)
    // every time we want to read the key currently pressed we need to send
    // some specific data to the scanner first
    // 40 0c 83 00 00 00 01 00  -> 0x6d
-   bytes[0] = 0x6d;
+   bytes[0] = config->reg;
    bytes[1] = 0x00; // not really needed, but just to be sure ;-)
    num_bytes = libusb_control_msg((libusb_device_t*)scanner->internal_dev_ptr,
 				  0x40, 0x0c, 0x0083, 0x0000, (void *)bytes, 0x0001);
@@ -246,7 +274,7 @@ int scanbtnd_get_button(scanner_t* scanner)
 
    // xor with mask and use only lower 4 bit
    // lookup button in button map and return
-   return current_button_map[(bytes[0] ^ 0x1f) & 0x0f];  
+   return config->button_map[(bytes[0] ^ config->mask) & config->mask];
 }
 
 const char* scanbtnd_get_sane_device_descriptor(scanner_t* scanner)
