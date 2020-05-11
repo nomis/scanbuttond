@@ -20,6 +20,7 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <libgen.h>
 #include <signal.h>
 #include <string.h>
@@ -97,9 +98,9 @@ void sighandler(int i)
 
 
 // Executes an external program and wait until it terminates
-void execute_and_wait(const char* program)
+bool execute_and_wait(const char* program)
 {
-	system(program);
+	return system(program) == 0;
 }
 
 
@@ -348,7 +349,9 @@ int main(int argc, char** argv)
 					snprintf(cmd, BUF_SIZE, "%s %d %s", buttonpressed_script, button,
 							backend->scanbtnd_get_sane_device_descriptor(scanner));
 					backend->scanbtnd_close(scanner);
-					execute_and_wait(cmd);
+					if (execute_and_wait(cmd)) {
+						scanner->lastbutton = 0;
+					}
 					button = 0;
 					result = backend->scanbtnd_open(scanner);
 					if (result != 0)
