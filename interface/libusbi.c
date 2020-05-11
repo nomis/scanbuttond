@@ -25,7 +25,7 @@
 #include <syslog.h>
 #include "scanbuttond/libusbi.h"
 
-#define TIMEOUT	   	10 * 1000	/* 10 seconds */
+#define TIMEOUT	   	1000	/* 1 second */
 
 int invocation_count = 0;
 
