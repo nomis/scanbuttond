@@ -255,6 +255,8 @@ int scanbtnd_get_button(scanner_t* scanner)
       return 0;
    }
 
+   usleep(10000);
+
    // now we can ask for the current state
    // only the currently pressed keys are reported, if some key was pressed _and_ release between
    // the last an the current query it is not reported here, depending on the query frequence
